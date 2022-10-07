@@ -1,6 +1,6 @@
 # <--Project Title-->
 
-**Author:** [Tony Kabilan Okeke](mailto:tonykabilanokeke@gmail.com)
+**Authors:** [Tony Kabilan Okeke](mailto:tonykabilanokeke@gmail.com), [Ali Youssef](mailto:), [Cooper Molloy](mailto:)
 
 <--Package Description-->
 
@@ -18,6 +18,16 @@
 `design.pptx`
 
 
+- Select GSEs from cumida
+    - Use `GEOparse` to retrieve data from GEO
+    - See if there is a generalizable way to parse the data and identify cancer v controls
+        - Selection criteria: Datasets needs >=2 groups for comparison
+        - Build CLI for downloading & parsing dataset
+        - libraries ???
+        - documentation ???
+            - sphinx ???
+
+- If all else fails (no generalizable solution), use cumida datasets
 
 ## Usage 
 
