@@ -1,6 +1,8 @@
 # <--Project Title-->
 
-**Authors:** [Tony Kabilan Okeke](mailto:tonykabilanokeke@gmail.com), [Ali Youssef](mailto:), [Cooper Molloy](mailto:)
+**Authors:** [Tony Kabilan Okeke](mailto:tonykabilanokeke@gmail.com), 
+             [Ali Youssef](mailto:amy57@drexel.edu), 
+             [Cooper Molloy](mailto:cdm348@drexel.edu)
 
 <--Package Description-->
 
