@@ -4,7 +4,19 @@
              [Ali Youssef](mailto:amy57@drexel.edu), 
              [Cooper Molloy](mailto:cdm348@drexel.edu)
 
-<--Package Description-->
+
+## Project Proposal
+
+The goal of this project is to develop a web application to investigate 
+variations in gene expression across various cancer types. Datasets selected 
+from GEO (Gene Expression Omnibus) and CuMiDa (Curated Microarray Database) 
+will be preprocessed and curated in a SQLite database. The Dash library (python) 
+will then be used to develop a web application that will generate interactive 
+visualizations of the curated dataset. The software will identify key 
+differences in gene expression between healthy controls and patients with 
+various types of cancer. The web application will include interactive heatmaps 
+to illustrate the expression of various genes in the selected cancer type.
+
 
 # API-Keys
 
