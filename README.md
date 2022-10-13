@@ -18,38 +18,37 @@ various types of cancer. The web application will include interactive heatmaps
 to illustrate the expression of various genes in the selected cancer type.
 
 
-# API-Keys
+## Folder Structure
+
+```
+.
+├── design.pdf          [Contains project sketch and flowchart]
+├── env.yml             [Contains project dependencies]
+├── index.yml           [Contains project details]
+├── INSTRUCTIONS.md     [Contains instructions for BMES 550 project]
+├── LICENSE.md          [Project license]
+├── notes.md            [Contains meeting notes and todo items]
+├── presentation.pptx   [Contains presentation slides]
+├── README.md           [Contains project description and installation instructions]
+├── report.docx         [Contains project report]
+├── report.pdf          [Contains project report]
+├── src                 [Contains project source code]
+│   ├── dataprep.py     [Script for preparing the machine learning dataset]
+│   ├── project.ipynb   [Notebook for running analysis]
+│   └── tools.py        [Module with custom functions and classes]
+└── thumb.png           [Project thumbnail]
+```
 
 
-## File Descriptions
+## API-Keys
 
-<--Description of each file-->
-
-`index.yml`
-`thumb.png`
-`report.docx`
-`presentation.pptx`
-`design.pptx`
-
-
-- Select GSEs from cumida
-    - Use `GEOparse` to retrieve data from GEO
-    - See if there is a generalizable way to parse the data and identify cancer v controls
-        - Selection criteria: Datasets needs >=2 groups for comparison
-        - Build CLI for downloading & parsing dataset
-        - libraries ???
-        - documentation ???
-            - sphinx ???
-
-- If all else fails (no generalizable solution), use cumida datasets
 
 ## Usage 
 
 ```bash
-# Create the conda environment
+# Set up conda environment
 conda env create -f environment.yml
 conda activate project
-
 
 ```
 
