@@ -3,3 +3,13 @@
 ## 2022-10-10
 
 - work on project proposal
+- Select GSEs from cumida
+    - Use `GEOparse` to retrieve data from GEO
+    - See if there is a generalizable way to parse the data and identify cancer v controls
+        - Selection criteria: Datasets needs >=2 groups for comparison
+        - Build CLI for downloading & parsing dataset
+        - libraries ???
+        - documentation ???
+            - sphinx ???
+
+- If all else fails (no generalizable solution), use cumida datasets
