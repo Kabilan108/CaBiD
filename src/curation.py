@@ -10,10 +10,11 @@ Purpose:  This module contains functions for data curation.
 
 # Imports
 from GEOparse.GEOTypes import GPL, GSE
+from GEOparse import get_GEO
+from pathlib import Path
 from typing import Union
 from rich import print
 
-import GEOparse
 import pickle
 import fire
 import os
@@ -23,7 +24,7 @@ import utils
 
 def geodlparse(
     acc: str, 
-    datadir: str='', 
+    datadir: Union[str, Path]='', 
     silent: bool=False,
     make_dir: bool=False,
     cache: bool=False
@@ -36,7 +37,7 @@ def geodlparse(
     ----------
     acc : str
         GEO accession
-    datadir : str
+    datadir : Union[str, Path], optional
         Directory for storing downloaded data, will default to a 
         temporary directory if not specified
     silent : bool, optional
@@ -59,10 +60,13 @@ def geodlparse(
     assert acc.startswith('GSE') or acc.startswith('GPL'), \
         'acc must be a GSE or GPL accession'
 
-    assert isinstance(datadir, str), 'datadir must be a string'
+    assert isinstance(datadir, str) or isinstance(datadir, Path),\
+        "datadir must be a string or pathlib.Path object"
+    if isinstance(datadir, str):
+        datadir = Path(datadir)
     if datadir == '':
         # Use a temporary directory
-        datadir = utils.tempdir('GEO').__str__()
+        datadir = utils.tempdir('GEO')
     elif not os.path.exists(datadir):
         if make_dir:  os.makedirs(datadir)
         else:  raise ValueError('Directory does not exist')
@@ -71,11 +75,10 @@ def geodlparse(
     assert isinstance(make_dir, bool), 'make_dir must be a boolean'
     
     # Define file names
-    geofile = os.path.join(
-        datadir, 
+    geofile = datadir.joinpath(
         f'{acc}.txt' if acc[:3] == 'GPL' else f'{acc}_family.soft.gz'
-    )
-    cachefile = os.path.join(datadir, f'{acc}.cache')
+    ).resolve()
+    cachefile = datadir.joinpath(f'{acc}.cache').resolve()
 
     # Load cached data if it exists
     if os.path.isfile(cachefile):
@@ -93,12 +96,12 @@ def geodlparse(
             # Parse already downloaded data
             if os.path.isfile(geofile):
                 if not silent:  print(f"Parsing {acc}")
-                geodata = GEOparse.get_GEO(filepath=geofile, silent=silent)
+                geodata = get_GEO(filepath=geofile, silent=silent)
 
             # Download and parse data
             else:
                 if not silent:  print(f"Downloading and parsing {acc}")
-                geodata = GEOparse.get_GEO(acc, destdir=datadir, silent=silent)
+                geodata = get_GEO(acc, destdir=datadir, silent=silent)  #type: ignore
             
             # Cache data
             if cache:
