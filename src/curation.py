@@ -119,9 +119,10 @@ def geodlparse(
                 f"\n\n{E}", sep=' ')
 
 
-class CuMiDa:
+class cumida:
     """
     Class for loading datasets from the Curated Microarray Database 
+    hosted by SBCB (sbcb.inf.ufrgs.br)
 
     Attributes
     ----------
@@ -136,13 +137,37 @@ class CuMiDa:
     -------
     """
 
-    INDEX = 'data/cumida.json'
+    INDEX = ''.join([
+        "https://gist.githubusercontent.com/Kabilan108/",
+        "3d11266abdd3c237d359dd7c11a40871/raw/"
+        "34f204fc85241984f711e35f16571f222f2bb890/cumida.json"
+    ])
     BASEURL = 'https://sbcb.inf.ufrgs.br'
 
-    def __init__(self):
+
+    def __init__(self, datadir: Union[str, Path]=''):
         """
+        Initialize the CuMiDa class.
+
+        Parameters
+        ----------
+        datadir : str, optional
+            Directory for storing downloaded data, will default to a 
+            temporary directory if not specified
+        """
+
+        # Check inputs
+        assert isinstance(datadir, str), 'datapath must be a string'
+        if datadir == '':
+            # Use a temporary directory
+            datadir = utils.tempdir('GEO')
+        elif not os.path.exists(datadir):
+            os.makedirs(datadir);
+        datadir = Path(datadir).resolve()
+
+        # 
+            
         
-        """
 
         pass
 
