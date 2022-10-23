@@ -12,4 +12,25 @@
         - documentation ???
             - sphinx ???
 
+
+
+### 2022-10-23
+- Split sections for presentation and report
+  - Ali
+    - Introduction - Problem, Biology
+    - Discussion
+  - Tony
+    - Experiments and Methods
+  - Cooper
+    - Introduction - Goals
+    - Results
+- Code Studd
+  - Ali
+    - Dash - SQL integration
+  - Tony 
+    - Data curation & preprocessing
+  - Cooper
+    - Dash visualizations
+
+
 - If all else fails (no generalizable solution), use cumida datasets
