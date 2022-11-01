@@ -84,7 +84,7 @@ def slugify(value: str, allow_unicode: bool=False) -> str:
             .encode('ascii', 'ignore')
             .decode('ascii'))
     
-    value = re.sub(r'[^\w\s-]', '', value).strip().lower()
+    value = re.sub(r'[^\w.\s-]', '', value).strip().lower()
 
     return re.sub(r'[-\s]+', '-', value)
 
@@ -94,9 +94,10 @@ def isnonemptyfile(file: str) -> bool:
     Check if a file exists and is not empty
     """
 
-    assert isinstance(file, str), 'file must be a string'
+    assert isinstance(file, str) or isinstance(file, Path), \
+        'file must be a string'
 
-    return Path(file).is_file() and Path(file).stat().st_size > 0
+    return os.path.isfile(file) and os.path.getsize(file) > 0
 
 
 def downloadurl(url: str, file: str='', overwrite: bool=False) -> str:
@@ -157,7 +158,7 @@ def downloadurl(url: str, file: str='', overwrite: bool=False) -> str:
                 total=size, 
                 unit='B', 
                 unit_scale=True, 
-                desc=file, 
+                desc=file.name,  # type: ignore
                 initial=0
             ) as pbar:
                 for chunk in r.iter_content(chunk_size=1024):
