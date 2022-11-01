@@ -9,12 +9,94 @@ Purpose:  This module contains utility functions.
 """
 
 # Imports
+import unicodedata
 import requests
+import tempfile
 import shutil
+import os
 import re
 
 from tqdm.auto import tqdm
 from pathlib import Path
+
+
+class config:
+    """
+    Config options for module
+
+    Attributes
+    ----------
+    CACHEDIR : str
+        Directory for storing cached data (pickle files)
+    DATADIR : str
+        Directory for storing downloaded data
+    TEMPDIR : str
+        Directory for storing temporary data
+    """
+
+    CACHEDIR = None
+    DATADIR = None
+    TEMPDIR = None
+
+
+def tempdir() -> Path:
+    """
+    Get a temporary directory
+
+    Returns
+    -------
+    Path
+        Path to a temporary directory
+    """
+
+    # Check if temporary directory is set
+    if config.TEMPDIR is not None:
+        if not os.path.exists(config.TEMPDIR):
+            os.makedirs(config.TEMPDIR)
+        return Path(config.TEMPDIR).resolve()
+
+    # Create a temporary directory
+    path = (Path(tempfile.gettempdir()) / 'CaBiD').resolve()
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    return path
+
+
+def slugify(value: str, allow_unicode: bool=False) -> str:
+    """
+    Taken from https://github.com/django/django/blob/master/django/utils/text.py
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces or
+    repeated dashes to single dashes. Remove characters that aren't
+    alphanumerics, underscores, or hyphens. Convert to lowercase. 
+    Also strip leading and trailing whitespace, dashes, and underscores.
+    """
+
+    # Check inputs
+    assert isinstance(value, str), 'filename must be a string'
+    assert isinstance(allow_unicode, bool), 'allow_unicode must be a boolean'
+
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+    else:
+        value = (unicodedata.normalize('NFKD', value)
+            .encode('ascii', 'ignore')
+            .decode('ascii'))
+    
+    value = re.sub(r'[^\w\s-]', '', value).strip().lower()
+
+    return re.sub(r'[-\s]+', '-', value)
+
+
+def isnonemptyfile(file: str) -> bool:
+    """
+    Check if a file exists and is not empty
+    """
+
+    assert isinstance(file, str), 'file must be a string'
+
+    return Path(file).is_file() and Path(file).stat().st_size > 0
 
 
 def downloadurl(url: str, file: str='', overwrite: bool=False) -> str:
@@ -55,11 +137,11 @@ def downloadurl(url: str, file: str='', overwrite: bool=False) -> str:
     # Get file name from URL and append to file path
     if not file:
         urlname = url.split('?')[0].split('/')[-1]
-        file = (tempdir() / sanitizefilename(urlname)).resolve()
+        file = (tempdir() / slugify(urlname)).resolve()  # type: ignore
     elif file.endswith('/'):
-        file = (Path(file) / sanitizefilename(url)).resolve()
+        file = (Path(file) / slugify(url)).resolve()  # type: ignore
     else:
-        file = Path(file).resolve()
+        file = Path(file).resolve()  # type: ignore
 
     # Return file if it exists and overwrite is False
     if isnonemptyfile(file) and not overwrite:  return file
