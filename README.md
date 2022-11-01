@@ -1,9 +1,8 @@
-# <--Project Title-->
+# Cancer Biomarker Discovery (CaBiD) Project
 
-**Authors:** [Tony Kabilan Okeke](mailto:tonykabilanokeke@gmail.com), 
-             [Ali Youssef](mailto:amy57@drexel.edu), 
+**Authors:** [Tony Kabilan Okeke](mailto:tonykabilanokeke@gmail.com),
+             [Ali Youssef](mailto:amy57@drexel.edu),
              [Cooper Molloy](mailto:cdm348@drexel.edu)
-
 
 ## Project Proposal
 
@@ -16,7 +15,6 @@ visualizations of the curated dataset. The software will identify key
 differences in gene expression between healthy controls and patients with 
 various types of cancer. The web application will include interactive heatmaps 
 to illustrate the expression of various genes in the selected cancer type.
-
 
 ## Folder Structure
 
@@ -39,17 +37,16 @@ to illustrate the expression of various genes in the selected cancer type.
 └── thumb.png           [Project thumbnail]
 ```
 
-
 ## API-Keys
 
-
-## Usage 
+## Usage
 
 ```bash
 # Set up conda environment
 conda env create -f environment.yml
 conda activate project
 
+# Run the app
 ```
 
 ## File path assumptions
