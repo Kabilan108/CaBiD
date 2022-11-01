@@ -10,6 +10,8 @@ Purpose:  This module contains utility functions.
 
 # Imports
 import requests
+import shutil
+import re
 
 from tqdm.auto import tqdm
 from pathlib import Path
@@ -18,13 +20,15 @@ from pathlib import Path
 def downloadurl(url: str, file: str='', overwrite: bool=False) -> str:
     """
     Download and save file from a given URL
+    Modified from bmes.downloadurl by Ahmet Sacan
 
     Parameters
     ----------
     url : str
         URL to retreive file from
     file : str, optional
-        Path to file where download will be stored, by default ''
+        Path to file (or directory) where download will be stored,
+        by default ''
     overwrite : bool, optional
         Should existing files be overwritten, by default False
 
@@ -38,6 +42,27 @@ def downloadurl(url: str, file: str='', overwrite: bool=False) -> str:
     assert isinstance(url, str), 'url must be a string'
     assert isinstance(file, str), 'file must be a string'
     assert isinstance(overwrite, bool), 'overwrite must be a boolean'
+
+    # If URL is not a remote address, assume it is a local file
+    if not re.search(r'^(http[s]?|ftp):\/\/', url):
+        if not file:
+            return url
+        if not overwrite:
+            if isnonemptyfile(file):  return file
+            shutil.copyfile(url, file)
+            return file
+
+    # Get file name from URL and append to file path
+    if not file:
+        urlname = url.split('?')[0].split('/')[-1]
+        file = (tempdir() / sanitizefilename(urlname)).resolve()
+    elif file.endswith('/'):
+        file = (Path(file) / sanitizefilename(url)).resolve()
+    else:
+        file = Path(file).resolve()
+
+    # Return file if it exists and overwrite is False
+    if isnonemptyfile(file) and not overwrite:  return file
 
     # Download the file
     r = requests.get(url, stream=True, allow_redirects=True,
