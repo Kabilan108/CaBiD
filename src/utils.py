@@ -65,11 +65,11 @@ def cachedir() -> Path:
     """
 
     # Check if temporary directory is set
-    if config.TEMPDIR is not None:
-        if not os.path.exists(config.TEMPDIR):
-            os.makedirs(config.TEMPDIR)
+    if config.CACHEDIR is not None:
+        if not os.path.exists(config.CACHEDIR):
+            os.makedirs(config.CACHEDIR)
 
-        return Path(config.TEMPDIR).resolve()
+        return Path(config.CACHEDIR).resolve()
 
     # Create a temporary directory
     path = (Path(tempfile.gettempdir()) / 'CaBiD/cache').resolve()
