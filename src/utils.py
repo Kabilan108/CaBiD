@@ -13,12 +13,16 @@ import unicodedata
 import platform
 import requests
 import tempfile
+import sqlite3
 import shutil
 import os
 import re
 
+from typing import Union, Tuple, Any
+from pandas import DataFrame
 from tqdm.auto import tqdm
 from pathlib import Path
+from rich import print
 
 
 class config:
@@ -217,3 +221,120 @@ def downloadurl(url: str, file: str='', overwrite: bool=False) -> str:
                         str(r.status_code))
 
     return file
+
+
+class SQLite:
+    """
+    Wrapper class for accessing SQLite databases
+
+    Methods
+    -------
+    execute(query: str, params: tuple=(), commit: bool=False)
+        Execute a query
+    select(query: str, params: tuple=())
+        Execute a select query
+    close()
+        Close the database connection
+    """
+
+    def __init__(self, file: Union[Path, str]):
+        """
+        Initialize the SQLite class and connect to the database
+
+        Parameters
+        ----------
+        file : Path of str
+            Path to SQLite database file
+        """
+
+        # Check inputs
+        if isinstance(file, str):  file = Path(file)
+        assert file.exists(), f"File {file} does not exist"
+        
+        self.file = file
+        self.conn = sqlite3.connect(file)
+        self.conn.row_factory = sqlite3.Row  # Fetchall returns dict
+
+    def execute(self, query: str, params: Tuple[Any, ...]=()) -> None:
+        """
+        Execute a query
+
+        Parameters
+        ----------
+        query : str
+            Query to execute
+        params : Tuple[Any, ...], optional
+            Parameters to pass to query, by default ()
+        """
+
+        # Check inputs
+        assert isinstance(query, str), 'query must be a string'
+        assert isinstance(params, tuple), 'params must be a tuple'
+
+        if query.lower().startswith('select'):
+            raise Exception('Use select method for select queries')
+        else:
+            try:
+                self.conn.execute(query, params)
+                self.conn.commit()
+            except sqlite3.Error as e:
+                print(e)
+
+    def select(self, query: str, params: Tuple[Any, ...]=()) -> DataFrame:
+        """
+        Execute a select query and return the results as a DataFrame
+
+        Parameters
+        ----------
+        query : str
+            Query to execute
+        params : Tuple[Any, ...], optional
+            Parameters to pass to query, by default ()
+
+        Returns
+        -------
+        DataFrame
+            Results of the query
+        """
+
+        # Check inputs
+        assert isinstance(query, str), 'query must be a string'
+        assert isinstance(params, tuple), 'params must be a tuple'
+
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+        except sqlite3.Error as e:
+            print(e)
+            return None  # type: ignore
+
+        if len(rows) == 0:
+            print("No rows returned")
+            return None  # type: ignore
+        else:
+            df = DataFrame(rows)
+            df.columns = [x[0] for x in cursor.description]  # type: ignore
+            return df
+
+    def close(self) -> None:
+        print(f"Closing connection to {self.file}")
+        self.conn.close()
+
+    def __enter__(self):
+        return self.conn.cursor()
+
+    def __exit__(self, type, value, traceback):
+        self.conn.commit()
+        self.conn.close()
+
+    def __repr__(self) -> str:
+        return f"SQLite({self.file.name})"
+
+    def __str__(self) -> str:
+        return f"SQLite({self.file.name})"
+
+
+if __name__ == '__main__':
+
+    pass
