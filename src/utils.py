@@ -20,6 +20,7 @@ import re
 
 from typing import Union, Tuple, Any
 from pandas import DataFrame
+from itertools import islice
 from tqdm.auto import tqdm
 from pathlib import Path
 from rich import print
@@ -221,6 +222,33 @@ def downloadurl(url: str, file: str='', overwrite: bool=False) -> str:
                         str(r.status_code))
 
     return file
+
+
+def iohead(file: Union[str, Path], n: int=5) -> None:
+    """
+    Print the first n lines of a file to the console
+
+    Parameters
+    ----------
+    file : str or Path
+        Path to file
+    n : int, optional
+        Number of lines to print, by default 10
+    """
+
+    # Check inputs
+    if isinstance(file, str):  file = Path(file)
+    assert isinstance(file, Path), 'file must be a valid path'
+    assert file.exists(), 'file does not exist'
+    assert isinstance(n, int) and n > 0, 'n must be a positive integer'
+
+    # Open file
+    with open(file, 'r') as f:
+        for line in islice(f, n):
+            if len(line) > 80:
+                print(line[:80] + '...')
+            else:
+                print(line.rstrip())
 
 
 class SQLite:
