@@ -1,9 +1,7 @@
 """
 Data Curation Tools
 
-Authors:  Tony Kabilan Okeke <tonykabilanokeke@gmail.com>
-          Ali Youssef <amy57@drexel.edu>
-          Cooper Molloy <cdm348@drexel.edu>
+Author:  Tony Kabilan Okeke <tko35@drexel.edu>
 
 Purpose:  This module contains functions for data curation.
 """
@@ -66,7 +64,7 @@ def geodlparse(
         datadir = Path(datadir)
     if datadir == '':
         # Use a temporary directory
-        datadir = utils.tempdir('GEO')
+        datadir = utils.tempdir()
     elif not os.path.exists(datadir):
         if make_dir:  os.makedirs(datadir)
         else:  raise ValueError('Directory does not exist')
@@ -78,10 +76,10 @@ def geodlparse(
     geofile = datadir.joinpath(
         f'{acc}.txt' if acc[:3] == 'GPL' else f'{acc}_family.soft.gz'
     ).resolve()
-    cachefile = datadir.joinpath(f'{acc}.cache').resolve()
+    cachefile = utils.cachedir().joinpath(f'{acc}.cache').resolve()
 
     # Load cached data if it exists
-    if os.path.isfile(cachefile):
+    if cachefile.is_file():
         try:
             if not silent: print(f'Loading cached data for {acc}')
             with open(cachefile, 'rb') as f:
@@ -96,7 +94,7 @@ def geodlparse(
             # Parse already downloaded data
             if os.path.isfile(geofile):
                 if not silent:  print(f"Parsing {acc}")
-                geodata = get_GEO(filepath=geofile, silent=silent)
+                geodata = get_GEO(filepath=geofile.__str__(), silent=silent)
 
             # Download and parse data
             else:
@@ -131,7 +129,6 @@ class cumida:
         database.
     BASEURL : str
         Base URL for downloading datasets from CuMiDa.
-
 
     Methods
     -------
