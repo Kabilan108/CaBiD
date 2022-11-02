@@ -34,9 +34,9 @@ class config:
         Directory for storing temporary data
     """
 
-    CACHEDIR = None
+    CACHEDIR = tempfile.gettempdir() + '/CaBiD/cache'
     DATADIR = None
-    TEMPDIR = None
+    TEMPDIR = tempfile.gettempdir() + '/CaBiD'
 
 
 def tempdir() -> Path:
@@ -53,6 +53,7 @@ def tempdir() -> Path:
     if config.TEMPDIR is not None:
         if not os.path.exists(config.TEMPDIR):
             os.makedirs(config.TEMPDIR)
+
         return Path(config.TEMPDIR).resolve()
 
     # Create a temporary directory
