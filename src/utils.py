@@ -1,9 +1,7 @@
 """
 Utilities
 
-Authors:  Tony Kabilan Okeke <tko35@drexel.edu>
-          Ali Youssef <amy57@drexel.edu>
-          Cooper Molloy <cdm348@drexel.edu>
+Author:  Tony Kabilan Okeke <tko35@drexel.edu>
 
 Purpose:  This module contains utility functions.
 """
@@ -277,7 +275,6 @@ class SQLite:
 
         # Check inputs
         if isinstance(file, str):  file = Path(file)
-        assert file.exists(), f"File {file} does not exist"
         
         self.file = file
         self.conn = sqlite3.connect(file)
@@ -350,7 +347,7 @@ class SQLite:
         self.conn.close()
 
     def __enter__(self):
-        return self.conn.cursor()
+        return self
 
     def __exit__(self, type, value, traceback):
         self.conn.commit()
