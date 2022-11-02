@@ -54,6 +54,31 @@ def ispc() -> bool:
     return ispc.value
 
 
+def cachedir() -> Path:
+    """
+    Get the cache directory
+
+    Returns
+    -------
+    Path
+        Path to cache directory
+    """
+
+    # Check if temporary directory is set
+    if config.TEMPDIR is not None:
+        if not os.path.exists(config.TEMPDIR):
+            os.makedirs(config.TEMPDIR)
+
+        return Path(config.TEMPDIR).resolve()
+
+    # Create a temporary directory
+    path = (Path(tempfile.gettempdir()) / 'CaBiD/cache').resolve()
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    return path
+
+
 def tempdir() -> Path:
     """
     Get a temporary directory
