@@ -10,6 +10,7 @@ Purpose:  This module contains utility functions.
 
 # Imports
 import unicodedata
+import platform
 import requests
 import tempfile
 import shutil
@@ -37,6 +38,17 @@ class config:
     CACHEDIR = tempfile.gettempdir() + '/CaBiD/cache'
     DATADIR = None
     TEMPDIR = tempfile.gettempdir() + '/CaBiD'
+
+
+def ispc() -> bool:
+    """
+    Check if the system is a PC
+    """
+
+    if not hasattr(ispc, 'value'):
+        system = platform.system()
+        ispc.value = system == 'Windows' or system.startswith('CYGWIN')
+    return ispc.value
 
 
 def tempdir() -> Path:
@@ -99,6 +111,37 @@ def isnonemptyfile(file: str) -> bool:
         'file must be a string'
 
     return os.path.isfile(file) and os.path.getsize(file) > 0
+
+
+def datadir() -> Path:
+    """
+    Return the path to a data directory
+    """
+
+    # Check if data directory is set
+    if config.DATADIR is not None:
+        if not os.path.exists(config.DATADIR):
+            os.makedirs(config.DATADIR)
+
+        return Path(config.DATADIR).resolve()
+
+    # Store path as an attribute
+    if not hasattr(datadir, 'path'):
+        datadir.path = ''
+    path = datadir.path
+
+    if not path:
+        if ispc():
+            path = Path(os.environ['USERPROFILE']) / 'CaBiD'
+        else:
+            path = Path(os.environ['HOME']) / '.cabid'
+        
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        datadir.path = path
+
+    return path
 
 
 def downloadurl(url: str, file: str='', overwrite: bool=False) -> str:
