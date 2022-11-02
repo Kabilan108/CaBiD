@@ -358,8 +358,3 @@ class SQLite:
 
     def __str__(self) -> str:
         return f"SQLite({self.file.name})"
-
-
-if __name__ == '__main__':
-
-    pass
