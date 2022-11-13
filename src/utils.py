@@ -7,21 +7,21 @@ Purpose:  This module contains utility functions.
 """
 
 # Imports
-import unicodedata
-import platform
-import requests
-import tempfile
-import sqlite3
-import shutil
 import os
+import platform
 import re
-
-from typing import Union, Tuple, Any
-from pandas import DataFrame
+import shutil
+import sqlite3
+import tempfile
+import unicodedata
 from itertools import islice
-from tqdm.auto import tqdm
 from pathlib import Path
+from typing import Any, Tuple, Union
+
+import requests
+from pandas import DataFrame
 from rich import print
+from tqdm.auto import tqdm
 
 
 class config:
