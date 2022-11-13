@@ -16,7 +16,7 @@ import tempfile
 import unicodedata
 from itertools import islice
 from pathlib import Path
-from typing import Any, Tuple, Union
+from typing import Any, Tuple
 
 import requests
 from pandas import DataFrame
@@ -257,7 +257,7 @@ def downloadurl(url: str, file: str='', overwrite: bool=False,
     return file
 
 
-def iohead(file: Union[str, Path], n: int=5) -> None:
+def iohead(file: str |Path, n: int=5) -> None:
     """
     Print the first n lines of a file to the console
 
@@ -298,7 +298,7 @@ class SQLite:
         Close the database connection
     """
 
-    def __init__(self, file: Union[Path, str]):
+    def __init__(self, file: Path | str):
         """
         Initialize the SQLite class and connect to the database
 
