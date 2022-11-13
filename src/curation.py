@@ -7,26 +7,25 @@ Purpose:  This module contains functions for data curation.
 """
 
 # Imports
-from GEOparse.GEOTypes import GPL, GSE
-from GEOparse import get_GEO
-from pathlib import Path
-from typing import Union
-from rich import print
-
-import pickle
-import fire
 import os
+import pickle
+from pathlib import Path
+
+import fire
+from GEOparse import get_GEO
+from GEOparse.GEOTypes import GPL, GSE
+from rich import print
 
 import utils
 
 
 def geodlparse(
     acc: str, 
-    datadir: Union[str, Path]='', 
+    datadir: str | Path='', 
     silent: bool=False,
     make_dir: bool=False,
     cache: bool=False
-) -> Union[GSE, GPL]:  #type: ignore
+) -> GSE | GPL:  #type: ignore
     """
     Download, parse and cache data from GEO.
     This fuction only downloads GSE and GPL data.
@@ -35,7 +34,7 @@ def geodlparse(
     ----------
     acc : str
         GEO accession
-    datadir : Union[str, Path], optional
+    datadir : str | Path, optional
         Directory for storing downloaded data, will default to a 
         temporary directory if not specified
     silent : bool, optional
@@ -48,7 +47,7 @@ def geodlparse(
 
     Returns
     -------
-    Union[GPL, GSE]
+    GPL | GSE
         Parsed GEO data
     """
 
@@ -142,7 +141,7 @@ class cumida:
     BASEURL = 'https://sbcb.inf.ufrgs.br'
 
 
-    def __init__(self, datadir: Union[str, Path]=''):
+    def __init__(self, datadir: str | Path=''):
         """
         Initialize the CuMiDa class.
 
@@ -157,7 +156,7 @@ class cumida:
         assert isinstance(datadir, str), 'datapath must be a string'
         if datadir == '':
             # Use a temporary directory
-            datadir = utils.tempdir('GEO')
+            datadir = utils.tempdir()
         elif not os.path.exists(datadir):
             os.makedirs(datadir);
         datadir = Path(datadir).resolve()
