@@ -41,10 +41,15 @@ to illustrate the expression of various genes in the selected cancer type.
 
 ## Usage
 
+This project depends on the `wxPython` package which requires additional
+installation steps for Linux machines. See the
+[wxPython documentation](https://wxpython.org/pages/downloads/) for more details.
+The instructions below will work on Windows and MacOS.
+
 ```bash
 # Set up conda environment
-conda env create -f environment.yml
-conda activate project
+conda env create -f env.yml
+conda activate cabid
 
 # Run the app
 ```
