@@ -172,7 +172,8 @@ def datadir() -> Path:
     return path
 
 
-def downloadurl(url: str, file: str='', overwrite: bool=False) -> str:
+def downloadurl(url: str, file: str='', overwrite: bool=False,
+                progress: bool=True) -> str:
     """
     Download and save file from a given URL
     Modified from bmes.downloadurl by Ahmet Sacan
@@ -186,6 +187,8 @@ def downloadurl(url: str, file: str='', overwrite: bool=False) -> str:
         by default ''
     overwrite : bool, optional
         Should existing files be overwritten, by default False
+    progress : bool, optional
+        Should a progress bar be displayed, by default True
 
     Returns
     -------
@@ -224,19 +227,26 @@ def downloadurl(url: str, file: str='', overwrite: bool=False) -> str:
                      timeout=(3, 27))
     if r.status_code == 200:
         size = int(r.headers.get('content-length', 0))
-
-        with open(file, 'wb') as f:
-            with tqdm(
-                total=size, 
-                unit='B', 
-                unit_scale=True, 
-                desc=file.name,  # type: ignore
-                initial=0
-            ) as pbar:
+        
+        # Create a progress bar
+        if progress:
+            with open(file, 'wb') as f:
+                with tqdm(
+                    total=size, 
+                    unit='B', 
+                    unit_scale=True, 
+                    desc=file.name,  # type: ignore
+                    initial=0
+                ) as pbar:
+                    for chunk in r.iter_content(chunk_size=1024):
+                        if chunk:
+                            f.write(chunk)
+                            pbar.update(len(chunk))
+        else:
+            with open(file, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=1024):
                     if chunk:
                         f.write(chunk)
-                        pbar.update(len(chunk))
 
     elif r.status_code == 404:
         raise Exception('URL not found')
