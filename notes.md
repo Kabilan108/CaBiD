@@ -13,7 +13,6 @@
             - sphinx ???
 
 
-
 ### 2022-10-23
 - Split sections for presentation and report
   - Ali
@@ -31,6 +30,11 @@
     - Data curation & preprocessing
   - Cooper
     - Dash visualizations
-
-
 - If all else fails (no generalizable solution), use cumida datasets
+
+
+### 2022-11-13
+- Cancer Type
+- Gene Series
+  - Show description of dataset in status bar
+
