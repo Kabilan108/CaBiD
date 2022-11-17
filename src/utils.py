@@ -1,9 +1,9 @@
 """
 Utilities
 
-Author:  Tony Kabilan Okeke <tko35@drexel.edu>
+By Tony Kabilan Okeke <tko35@drexel.edu>
 
-Purpose:  This module contains utility functions.
+This module contains utility functions.
 """
 
 # Imports

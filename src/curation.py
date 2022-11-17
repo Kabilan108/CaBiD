@@ -1,9 +1,9 @@
 """
 Data Curation Tools
 
-Author:  Tony Kabilan Okeke <tko35@drexel.edu>
+By Tony Kabilan Okeke <tko35@drexel.edu>
 
-Purpose:  This module contains functions for data curation.
+This module contains functions for data curation.
 """
 
 # Import necessary modules
