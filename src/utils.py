@@ -379,6 +379,22 @@ class SQLite:
             df.columns = [x[0] for x in cursor.description]  # type: ignore
             return df
 
+    
+    def drop_table(self, table: str) -> None:
+        """
+        Drop a table from the database
+
+        Parameters
+        ----------
+        table : str
+            Name of table to drop
+        """
+
+        # Check inputs
+        assert isinstance(table, str), 'table must be a string'
+
+        self.execute(f'DROP TABLE IF EXISTS {table}');
+
 
     def close(self) -> None:
         print(f"Closing connection to {self.file}")
