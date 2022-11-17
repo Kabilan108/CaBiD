@@ -315,6 +315,7 @@ class SQLite:
         self.conn = sqlite3.connect(file)
         self.conn.row_factory = sqlite3.Row  # Fetchall returns dict
 
+
     def execute(self, query: str, params: Tuple[Any, ...]=()) -> None:
         """
         Execute a query
@@ -339,6 +340,7 @@ class SQLite:
                 self.conn.commit()
             except sqlite3.Error as e:
                 print(e)
+
 
     def select(self, query: str, params: Tuple[Any, ...]=()) -> DataFrame:
         """
@@ -377,19 +379,28 @@ class SQLite:
             df.columns = [x[0] for x in cursor.description]  # type: ignore
             return df
 
+
     def close(self) -> None:
         print(f"Closing connection to {self.file}")
         self.conn.close()
 
+
     def __enter__(self):
+        """Enter the runtime context related to this object"""
         return self
 
+
     def __exit__(self, type, value, traceback):
+        """Exit the runtime context related to this object"""
         self.conn.commit()
         self.conn.close()
 
+
     def __repr__(self) -> str:
+        """Return a string representation of the object"""
         return f"SQLite({self.file.name})"
 
+
     def __str__(self) -> str:
+        """Return a string representation of the object"""
         return f"SQLite({self.file.name})"
