@@ -303,13 +303,12 @@ class CuMiDa:
         gse = pd.read_csv(path).set_index(['samples', 'type'])
 
         # Rename GSE columns with GenBank IDs where possible
-        gpl_acc = self._gpls[self.index.loc[dataset]['Platform']]
         try:
-            gpl = self._gpls[gpl_acc]
+            gpl = self._gpls[self.index.loc[dataset]['Platform']].table
             gpl['GB_ACC'] = gpl['GB_ACC'].fillna(gpl['ID'])
             gse.columns = gse.columns.map(gpl.set_index('ID')['GB_ACC'])
         except KeyError:
-            print(f'No GenBank IDs found for {gpl_acc}')
+            print(f'No GenBank IDs found for {dataset[0]}')
 
         return gse
 
@@ -324,3 +323,29 @@ class CuMiDa:
         """String representation of the CuMiDa class"""
 
         return f"CuMiDa(datadir={self.datadir})"
+
+
+def main():
+    """
+    Curate Gene Expression data from CuMiDa and generate a SQLite database
+
+    This script will download 34 cancer gene expression datasets from
+    CuMiDa. The selected datasets are from experiments run on select
+    Affymetrix microarrays whose GPL files annotate the probes with
+    GenBank Accessions. The selected datasets each include 2 classes - a
+    'normal' group and a 'cancer' group. See the README for more details.
+    """
+
+    # Create list of Affymetrix microarrays
+    platform = ['GPL92', 'GPL93', 'GPL96', 'GPL97', 'GPL570', 'GPL571', 
+                'GPL3921', 'GPL8300']
+
+    # Initialize CuMiDa
+    cumida = CuMiDa()
+
+    # Select datasets from the CuMiDa index
+    I = cumida.index['Platform'].isin(platform) & (cumida.index['Classes'] == 2)
+    selected = cumida.index.loc[I].index.tolist()
+
+    # Download the selected datasets
+    cumida.download(selected);
