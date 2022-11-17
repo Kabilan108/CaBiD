@@ -6,17 +6,32 @@ Author:  Tony Kabilan Okeke <tko35@drexel.edu>
 Purpose:  This module contains functions for data curation.
 """
 
-# Imports
-import os
-import pickle
-from pathlib import Path
-
-import fire
-from GEOparse import get_GEO
+# Import necessary modules
 from GEOparse.GEOTypes import GPL, GSE
+from GEOparse import get_GEO
+from tqdm.auto import tqdm
+from pathlib import Path
+from typing import Union
 from rich import print
 
+import pandas as pd
+import numpy as np
+import warnings
+import pickle
+import json
+import os
+import re
+
+# Import custom modules
 import utils
+
+
+# Suppress DtypeWarning from GEOparse
+warnings.filterwarnings(
+    action='ignore',
+    category=pd.errors.DtypeWarning,
+    module='GEOparse'
+)
 
 
 def geodlparse(
@@ -116,7 +131,7 @@ def geodlparse(
                 f"\n\n{E}", sep=' ')
 
 
-class cumida:
+class CuMiDa:
     """
     Class for loading datasets from the Curated Microarray Database 
     hosted by SBCB (sbcb.inf.ufrgs.br)
@@ -128,58 +143,184 @@ class cumida:
         database.
     BASEURL : str
         Base URL for downloading datasets from CuMiDa.
+    index : pd.DataFrame
+        Index of all datasets available from CuMiDa.
+    datadir : str | Path
+        Directory for storing downloaded data.
+    gse_dir : str | Path
+        Directory for storing downloaded GSE data.
+    gpl_dir : str | Path
+        Directory for storing downloaded GPL data.
 
     Methods
     -------
+    download(acc: str, datadir: str | Path='', silent: bool=False, 
+             make_dir: bool=False)
+        Download a dataset from CuMiDa.
+    load(dataset: tuple)
+        Load a specified dataset, along with gene annotations from its GPL.
     """
 
-    INDEX = ''.join([
-        "https://gist.githubusercontent.com/Kabilan108/",
-        "3d11266abdd3c237d359dd7c11a40871/raw/"
-        "34f204fc85241984f711e35f16571f222f2bb890/cumida.json"
-    ])
+    INDEX = ('https://gist.githubusercontent.com/Kabilan108/'
+             '3d11266abdd3c237d359dd7c11a40871/raw/'
+             'ff2af81ae70afaba99233400f9d79e30eb40942e/cumida.json')
     BASEURL = 'https://sbcb.inf.ufrgs.br'
 
 
-    def __init__(self, datadir: str | Path=''):
+    def __init__(self, datadir: Union[str, Path]='') -> None:
         """
         Initialize the CuMiDa class.
 
         Parameters
         ----------
-        datadir : str, optional
-            Directory for storing downloaded data, will default to a 
-            temporary directory if not specified
+        datadir : str or Path, optional
+            Directory for storing downloaded data, will default to the
+            project's data directory, utils.datadir() if not specified
         """
 
         # Check inputs
-        assert isinstance(datadir, str), 'datapath must be a string'
-        if datadir == '':
-            # Use a temporary directory
-            datadir = utils.tempdir()
-        elif not os.path.exists(datadir):
-            os.makedirs(datadir);
-        datadir = Path(datadir).resolve()
+        assert isinstance(datadir, str) or isinstance(datadir, Path), \
+            'datapath must be a string or PosixPath'
+        if datadir == '': datadir = utils.datadir()
+        if isinstance(datadir, str): datadir = Path(datadir)
+        if not os.path.exists: os.makedirs(datadir);
+        self.datadir = datadir.resolve()
 
-        # 
-            
+        # Retrieve the index of datasets
+        self._makeindex();
+
+        # Create subdirectory for gene expression matrices and platforms
+        self.gse_dir = self.datadir / 'GSE'
+        self.gpl_dir = self.datadir / 'GPL'
+        if not os.path.exists(self.gse_dir): os.makedirs(self.gse_dir)
+        if not os.path.exists(self.gpl_dir): os.makedirs(self.gpl_dir)
+
+
+    def _makeindex(self) -> None:
+        """
+        Create a dataframe containing the index of all datasets
+        available from CuMiDa.
+        """
+
+        # Download the index
+        file = (self.datadir / 'datasets.json').resolve().__str__()
+        index = utils.downloadurl(self.INDEX, file, progress=False)
+
+        # Load the dataset index
+        with open(self.datadir / 'datasets.json', 'rb') as f:
+            self.index = pd.DataFrame(json.load(f))
+
+        # Clean up the columns
+        self.index['ID'] = 'GSE' + self.index['gse'].astype(str)
+        self.index['Platform'] = 'GPL' + self.index['platform'].astype(str)
+        self.index['URL'] = self.BASEURL + \
+            self.index['downloads'].apply(pd.Series)['csv']
+        self.index = (self.index
+            .rename(columns={'type': 'Type', 'classes': 'Classes', 
+                             'samples': 'Samples', 'genes': 'Genes',
+                             'manufacturer': 'Manufacturer'})
+            [['ID', 'Platform', 'Manufacturer', 'Type', 'Classes', 'Samples', 
+              'Genes', 'URL']]
+            .sort_values(by=['Platform', 'Type'])
+            .set_index(['ID', 'Type']))
+        self._downloads = self.index['URL'].to_dict()
+
+
+    def download(self, selected: pd.DataFrame | tuple | list) -> None:
+        """
+        Download selected datasets from CuMiDa.
+
+        Parameters
+        ----------
+        selected : pd.DataFrame | tuple
+            A subset of `self.index` containing the datasets to download.
+            Or a tuple of (ID, Type) for a single dataset or a list of tuples.
+
+        Returns
+        -------
+        None
+        """
+
+        try:
+            if isinstance(selected, pd.DataFrame):
+                urls = [self._downloads[x] for x in selected.index]
+                self._selected = selected.index.to_list()
+            elif isinstance(selected, tuple):
+                urls = [self._downloads[selected]]
+                self._selected = [selected]
+            elif isinstance(selected, list):
+                urls = [self._downloads[x] for x in selected]
+                self._selected = selected
+            else:
+                raise TypeError('selected must be a DataFrame or tuple')
+        except KeyError:
+            raise KeyError('Dataset not found in CuMiDa index')
+
+        # Download the GSE matrices from CuMiDa
+        self.file_paths = [
+            self.gse_dir / re.search(r'\w+\.csv', x)[0] for x in urls  #type: ignore
+        ]
+        if len(self.file_paths) > 1:
+            with tqdm(total=len(urls), desc='Downloading GSEs') as pbar:
+                for url, file in zip(urls, self.file_paths):
+                    utils.downloadurl(url, file.__str__(), progress=False);
+                    pbar.update(1)
+        else:
+            utils.downloadurl(urls[0], self.file_paths[0].__str__(), progress=False);
+
+        # Download the GPLs from GEO
+        self._gpl_accs = np.unique([
+            self.index.loc[x]['Platform'] for x in self._selected
+        ])
+        self._gpls = dict()
+        with tqdm(total=len(self._gpl_accs), desc='Downloading GPLs') as pbar:
+            for acc in self._gpl_accs:
+                self._gpls[acc] = geodlparse(acc, self.gpl_dir.__str__(), silent=True)
+                pbar.update(1)
+
+
+    def load(self, dataset: tuple) -> pd.DataFrame:
+        """
+        Load a specified dataset.
+
+        Parameters
+        ----------
+        dataset : tuple
+            A tuple of (ID, Type) for a single dataset.
         
-
-        pass
-
-    def __repr__(self):
-        """
-        
+        Returns
+        -------
+        gse : pd.DataFrame
         """
 
-        pass
+        # Check inputs
+        assert isinstance(dataset, tuple), 'dataset must be a tuple'
+        assert len(dataset) == 2, 'dataset must be a tuple of (ID, Type)'
+        assert dataset in self.index.index, 'dataset not found in CuMiDa index'
 
-    def __str__(self):
-        """
-        
-        """
+        # Load the GSE
+        path = self.gse_dir / f"{'_'.join(dataset[::-1])}.csv"
+        gse = pd.read_csv(path).set_index(['samples', 'type'])
 
-        pass
+        # Rename GSE columns with GenBank IDs where possible
+        gpl_acc = self._gpls[self.index.loc[dataset]['Platform']]
+        try:
+            gpl = self._gpls[gpl_acc]
+            gpl['GB_ACC'] = gpl['GB_ACC'].fillna(gpl['ID'])
+            gse.columns = gse.columns.map(gpl.set_index('ID')['GB_ACC'])
+        except KeyError:
+            print(f'No GenBank IDs found for {gpl_acc}')
 
-if __name__  == '__main__':
-    fire.Fire(geodlparse)
+        return gse
+
+
+    def __repr__(self) -> str:
+        """Return a string representation of the CuMiDa class"""
+
+        return f'CuMiDa(datadir={self.datadir})'
+
+
+    def __str__(self) -> str:
+        """String representation of the CuMiDa class"""
+
+        return f"CuMiDa(datadir={self.datadir})"
