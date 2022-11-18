@@ -344,11 +344,9 @@ def main():
     (GPL570). The selected datasets each include 2 classes - a 'normal' group
     and a 'cancer' group. The GPL570 array contains 54,676 probes. See the
     README for more details.
-    """
 
-    # Create list of Affymetrix microarrays
-    platform = ['GPL92', 'GPL93', 'GPL96', 'GPL97', 'GPL570', 'GPL571', 
-                'GPL3921', 'GPL8300']
+    The datasets will be stored in a SQLite database in the project directory.
+    """
 
     # Initialize CuMiDa
     cumida = CuMiDa()
@@ -360,23 +358,53 @@ def main():
     # Download the selected datasets
     cumida.download(selected);
 
-    # Initialize the SQLite database
+    # Initialize database connection
     dbpath = utils.datadir.path / 'CaBiD.db'
     db = utils.SQLite(dbpath)
-    db.execute("PRAGMA foreign_keys = ON")
-    
-    # Create the 'datasets' table
+
+    # Drop any existing tables
+    db.drop_table('datasets')
+    db.drop_table('expression')
+
+    # Create the tables
     db.execute("""
-        CREATE TABLE datasets (
-            id TEXT PRIMARY KEY,
-            type TEXT,
-            platform TEXT,
-            classes INTEGER,
-            samples INTEGER,
-            genes INTEGER,
-            FOREIGN KEY (platform) REFERENCES platforms (id)
-        )
+    CREATE TABLE IF NOT EXISTS `datasets` (
+        `ID` INTEGER PRIMARY KEY AUTOINCREMENT,
+        `GSE` VARCHAR(8) NOT NULL,
+        `CANCER` VARCHAR(10) NOT NULL
+    );
     """)
+    db.execute("""
+    CREATE TABLE IF NOT EXISTS `expression` (
+        `ID` INTEGER PRIMARY KEY AUTOINCREMENT,
+        `DATASET_ID` INT NOT NULL,
+        `SAMPLE_TYPE` VARCHAR(32) NOT NULL,
+        `EXPRESSION` BLOB NOT NULL,
+        FOREIGN KEY(`DATASET_ID`) REFERENCES `datasets`(`ID`)
+    );
+    """)
+
+    # Populate the database with the selected datasets
+    with tqdm(total=len(selected), desc="Building Database") as pbar:
+        for i, gse_idx in enumerate(selected, start=1):
+            # Populate the `datasets` table
+            db.execute("""
+            INSERT INTO `datasets` (`GSE`, `CANCER`) VALUES (?, ?);
+            """, gse_idx)
+
+            # Load the GSE matrix
+            gse = cumida.load(gse_idx)
+
+            # Populate the `expression` table
+            samples = (gse.apply(lambda row: db.binarize(row), axis=1)
+                .to_frame()
+                .reset_index()
+                .drop(columns='samples')
+                .rename(columns={'type': 'SAMPLE_TYPE', 0: 'EXPRESSION'}))
+            samples['DATASET_ID'] = i
+            samples.to_sql('expression', db.conn, if_exists='append', index=False)
+
+            pbar.update(1)
 
 
 if __name__ == '__main__':
