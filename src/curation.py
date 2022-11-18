@@ -443,7 +443,7 @@ def check_db() -> bool:
 
     # Check if the database contains the required tables
     if flag:
-        with CaBiD_DB(dbpath) as db:
+        with CaBiD_db(dbpath) as db:
             flag = db.check_table('GSE') and db.check_table('GPL')
 
     return flag
