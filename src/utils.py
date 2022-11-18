@@ -438,6 +438,3 @@ class SQLite:
     def __str__(self) -> str:
         """Return a string representation of the object"""
         return f"SQLite({self.file.name})"
-
-
-#! Need to implement a check for the existence of the database file
