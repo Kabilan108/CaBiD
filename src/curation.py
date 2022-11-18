@@ -302,13 +302,23 @@ class CuMiDa:
         path = self.gse_dir / f"{'_'.join(dataset[::-1])}.csv"
         gse = pd.read_csv(path).set_index(['samples', 'type'])
 
-        # Rename GSE columns with GenBank IDs where possible
         try:
+            # Rename GSE columns with GenBank IDs where possible
             gpl = self._gpls[self.index.loc[dataset]['Platform']].table
             gpl['GB_ACC'] = gpl['GB_ACC'].fillna(gpl['ID'])
             gse.columns = gse.columns.map(gpl.set_index('ID')['GB_ACC'])
-        except KeyError:
+
+            # Add numeric suffices to duplicate column names
+            idx = (gse.columns.to_series()
+                .groupby(level=0)
+                .transform('cumcount'))
+            gse.columns = gse.columns + '.' + idx.astype(str)
+
+            # Sort columns alphabetically
+            gse = gse.reindex(sorted(gse.columns), axis=1)
+        except KeyError as E:
             print(f'No GenBank IDs found for {dataset[0]}')
+            print(E)
 
         return gse
 
@@ -327,13 +337,13 @@ class CuMiDa:
 
 def main():
     """
-    Curate Gene Expression data from CuMiDa and generate a SQLite database
+    Curate Gene Expression data from CuMiDa and generate a SQLite database.
 
-    This script will download 34 cancer gene expression datasets from
-    CuMiDa. The selected datasets are from experiments run on select
-    Affymetrix microarrays whose GPL files annotate the probes with
-    GenBank Accessions. The selected datasets each include 2 classes - a
-    'normal' group and a 'cancer' group. See the README for more details.
+    This function will download 21 cancer gene expression datasets from CuMiDa
+    each of which was run on the Affymetrix Human Genome U133 Plus 2.0 Array
+    (GPL570). The selected datasets each include 2 classes - a 'normal' group
+    and a 'cancer' group. The GPL570 array contains 54,676 probes. See the
+    README for more details.
     """
 
     # Create list of Affymetrix microarrays
@@ -344,8 +354,30 @@ def main():
     cumida = CuMiDa()
 
     # Select datasets from the CuMiDa index
-    I = cumida.index['Platform'].isin(platform) & (cumida.index['Classes'] == 2)
+    I = (cumida.index['Platform'] == 'GPL570') & (cumida.index['Classes'] == 2)
     selected = cumida.index.loc[I].index.tolist()
 
     # Download the selected datasets
     cumida.download(selected);
+
+    # Initialize the SQLite database
+    dbpath = utils.datadir.path / 'CaBiD.db'
+    db = utils.SQLite(dbpath)
+    db.execute("PRAGMA foreign_keys = ON")
+    
+    # Create the 'datasets' table
+    db.execute("""
+        CREATE TABLE datasets (
+            id TEXT PRIMARY KEY,
+            type TEXT,
+            platform TEXT,
+            classes INTEGER,
+            samples INTEGER,
+            genes INTEGER,
+            FOREIGN KEY (platform) REFERENCES platforms (id)
+        )
+    """)
+
+
+if __name__ == '__main__':
+    main();
