@@ -14,6 +14,7 @@ import shutil
 import sqlite3
 import tempfile
 import unicodedata
+import _pickle as pickle
 from itertools import islice
 from pathlib import Path
 from typing import Any, Tuple
@@ -396,6 +397,24 @@ class SQLite:
         self.execute(f'DROP TABLE IF EXISTS {table}');
 
 
+    def binarize(self, obj: Any) -> sqlite3.Binary:
+        """
+        Convert an object to a pickled binary object
+
+        Parameters
+        ----------
+        obj : Any
+            Object to convert
+        
+        Returns
+        -------
+        sqlite3.Binary
+            Pickled binary object
+        """
+
+        return sqlite3.Binary(pickle.dumps(obj, protocol=5))
+
+
     def close(self) -> None:
         print(f"Closing connection to {self.file}")
         self.conn.close()
@@ -420,3 +439,6 @@ class SQLite:
     def __str__(self) -> str:
         """Return a string representation of the object"""
         return f"SQLite({self.file.name})"
+
+
+#! Need to implement a check for the existence of the database file
