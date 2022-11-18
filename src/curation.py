@@ -426,6 +426,29 @@ class CaBiD_db(utils.SQLite):
         return True
 
 
+def check_db() -> bool:
+    """
+    Check if the CaBiD database exists and if it contains the required tables.
+
+    Returns
+    -------
+    bool
+    """
+
+    # Define path to CaBiD database
+    dbpath = utils.datadir() / 'CaBiD.db'
+    
+    # Check if the database exists
+    flag = dbpath.exists()
+
+    # Check if the database contains the required tables
+    if flag:
+        with CaBiD_DB(dbpath) as db:
+            flag = db.check_table('GSE') and db.check_table('GPL')
+
+    return flag
+
+
 def main():
     """
     Curate Gene Expression data from CuMiDa and generate a SQLite database.
