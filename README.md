@@ -6,15 +6,35 @@
 
 ## Project Proposal
 
-The goal of this project is to develop a web application to investigate 
-variations in gene expression across various cancer types. Datasets selected 
-from GEO (Gene Expression Omnibus) and CuMiDa (Curated Microarray Database) 
-will be preprocessed and curated in a SQLite database. The Dash library (python) 
-will then be used to develop a web application that will generate interactive 
-visualizations of the curated dataset. The software will identify key 
-differences in gene expression between healthy controls and patients with 
-various types of cancer. The web application will include interactive heatmaps 
+The goal of this project is to develop a web application to investigate
+variations in gene expression across various cancer types. Datasets selected
+from GEO (Gene Expression Omnibus) and CuMiDa (Curated Microarray Database)
+will be preprocessed and curated in a SQLite database. The Dash library (python)
+will then be used to develop a web application that will generate interactive
+visualizations of the curated dataset. The software will identify key
+differences in gene expression between healthy controls and patients with
+various types of cancer. The web application will include interactive heatmaps
 to illustrate the expression of various genes in the selected cancer type.
+
+## Usage
+
+This project depends on the `wxPython` package which requires additional
+installation steps for Linux machines. See the
+[wxPython documentation](https://wxpython.org/pages/downloads/) for more details.
+The instructions below will work on Windows and MacOS.
+
+```bash
+# Clone the repository
+git clone git@github.com:Kabilan108/CaBiD.git
+cd CaBiD
+
+# Set up conda environment
+conda env create -f env.yml -y
+conda activate cabid
+
+# Download necessary data and build the project database
+python src/curation.py
+```
 
 ## The Dataset
 
@@ -77,20 +97,5 @@ accession numbers, cancer types, and sample sizes for each dataset.
 ```
 
 ## API-Keys
-
-## Usage
-
-This project depends on the `wxPython` package which requires additional
-installation steps for Linux machines. See the
-[wxPython documentation](https://wxpython.org/pages/downloads/) for more details.
-The instructions below will work on Windows and MacOS.
-
-```bash
-# Set up conda environment
-conda env create -f env.yml
-conda activate cabid
-
-# Run the app
-```
 
 ## File path assumptions
