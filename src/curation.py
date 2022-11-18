@@ -17,10 +17,15 @@ from rich import print
 import pandas as pd
 import numpy as np
 import warnings
-import pickle
 import json
 import os
 import re
+
+# Try to import cPickle
+try:
+    import _pickle as pickle
+except ImportError:
+    import pickle
 
 # Import custom modules
 import utils
@@ -335,6 +340,92 @@ class CuMiDa:
         return f"CuMiDa(datadir={self.datadir})"
 
 
+class CaBiD_db(utils.SQLite):
+    """
+    This class provides access to the CaBiD database and provides special
+    methods for querying the database.
+
+    Methods
+    -------
+    retrieve_dataset
+    """
+
+    def __init__(self, *args, **kwargs):
+        """Initialize the CaBiD_DB class"""
+
+        super().__init__(*args, **kwargs)
+
+    
+    def retrieve_dataset(self, query: str) -> pd.DataFrame:
+        """
+        This method will retrieve a gene expression dataset from the CaBiD
+        database. It will then convert the gene expresssion data (stored in
+        binary format as pickle objects) into a pandas DataFrame with the 
+        sample type (cancer or normal) as the index and the gene IDs as the
+        columns.
+
+        Parameters
+        ----------
+        query : str
+            The SQL `SELECT` query to retrieve the dataset.
+
+        Returns
+        -------
+        dataset : pd.DataFrame
+        """
+
+        assert isinstance(query, str), 'query must be a string'
+        assert query.startswith('SELECT'), 'query must be a SELECT statement'
+        assert '"SELECT * FROM expression WHERE DATASET_ID = 1"'
+
+        # Query the database
+        df = self.select(query)
+
+        # Convert the binary data into a pandas DataFrame
+        try:
+            dataset = (df['EXPRESSION']
+                .apply(lambda x: pickle.loads(x))
+                .set_index(df['SAMPLE_TYPE']))
+        except KeyError:
+            raise KeyError('Dataset not found in CaBiD database')
+        except:
+            raise Exception('Error converting binary data to DataFrame')
+
+        return dataset
+
+    def check_table(self, table: str) -> bool:
+        """
+        Check if a table exists in the database.
+
+        Parameters
+        ----------
+        table : str
+            The name of the table to check for.
+
+        Returns
+        -------
+        exists : bool
+            True if the table exists, False otherwise.
+        """
+
+        # Check if the table exists and is not empty
+        try:
+            self.select(f"""
+            SELECT tbl_name FROM sqlite_master 
+            WHERE 
+                type='table' AND 
+                tbl_name='{table}'
+            """)
+
+            self.select(f"""
+            SELECT * FROM {table}
+            """)
+        except:
+            return False
+
+        return True
+
+
 def main():
     """
     Curate Gene Expression data from CuMiDa and generate a SQLite database.
@@ -359,7 +450,7 @@ def main():
     cumida.download(selected);
 
     # Initialize database connection
-    dbpath = utils.datadir.path / 'CaBiD.db'
+    dbpath = utils.datadir() / 'CaBiD.db'
     db = utils.SQLite(dbpath)
 
     # Drop any existing tables
