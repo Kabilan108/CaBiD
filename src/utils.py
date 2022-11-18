@@ -373,8 +373,7 @@ class SQLite:
             return None  # type: ignore
 
         if len(rows) == 0:
-            print("No rows returned")
-            return None  # type: ignore
+            raise Exception('No results found')
         else:
             df = DataFrame(rows)
             df.columns = [x[0] for x in cursor.description]  # type: ignore
