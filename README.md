@@ -16,6 +16,10 @@ differences in gene expression between healthy controls and patients with
 various types of cancer. The web application will include interactive heatmaps
 to illustrate the expression of various genes in the selected cancer type.
 
+## Project Sketch
+
+![Project Sketch](Project Sketch.jpg)
+
 ## Usage
 
 This project depends on the `wxPython` package which requires additional
