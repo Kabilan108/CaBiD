@@ -23,15 +23,16 @@ expression analysis on the dataset.
 """
 
 # Import modules
-import pandas as pd
-import numpy as np
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 import wx
-import wx.lib.mixins.inspection as wit
-from functools import wraps
 
 # Import CaBiD modules
 from utils import datadir, CaBiD_db
 from curation import datacheck
+
+import wx.lib.mixins.inspection as wit
 
 
 class ControlBox(wx.StaticBox):
@@ -94,6 +95,11 @@ class GUIPanel(wx.Panel):
         Populate GSE selector with GSEs for selected cancer type
     onAnalyze
         Perform differential gene expression analysis on selected dataset
+    
+    Methods
+    -------
+    create_figure
+        Create a figure canvas
     """
 
     def __init__(self, parent):
@@ -135,12 +141,60 @@ class GUIPanel(wx.Panel):
         left_sizer.AddSpacer(10)
         left_sizer.Add(self.analyze, 0, wx.ALIGN_LEFT | wx.LEFT, 50)
 
+        # Create figure canvases
+        results_top = wx.BoxSizer(wx.HORIZONTAL)
+        results_bottom = wx.BoxSizer(wx.HORIZONTAL)
+        right_sizer.Add(results_top, 1, wx.EXPAND)
+        right_sizer.Add(results_bottom, 1, wx.EXPAND)
+
+        # DGE Table
+        self.dge_table = wx.ListCtrl(
+            self, -1, size=(300, 50),
+            style=wx.LC_REPORT | wx.BORDER_SUNKEN
+        )
+        for i, col in enumerate(['Gene', 'Fold Change', 'Adj p-value']):
+            self.dge_table.InsertColumn(i, col, width=100, 
+                format=wx.LIST_FORMAT_CENTER)
+        results_top.Add(self.dge_table, 0, wx.ALL, 15)
+
+        # Volcano Plot
+        self.volcano = self.create_figure((500,300), {
+            'title': 'Volcano Plot', 'x': 'Fold Change', 'y': '-log10(p-value)'
+        })
+        self.volcano['fig'].subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.15)
+
+        # Heatmap
+        self.heatmap = self.create_figure((830,300), {
+            'title': 'Heatmap', 'x': 'Samples', 'y': 'Genes'
+        })
+        self.heatmap['fig'].subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.15)
+
+        # Add figures to sizer
+        results_top.Add(self.volcano['canvas'], 0, wx.ALL, 15)
+        results_bottom.Add(self.heatmap['canvas'], 0, wx.EXPAND | wx.ALL, 15)
+
         # Add sizers to main sizer
         sizer.Add(left_sizer, 1, wx.ALIGN_LEFT | wx.ALL, 10)
         sizer.Add(right_sizer, 0, wx.EXPAND)
 
         # Set sizer
         self.SetSizer(sizer)
+
+
+    def create_figure(self, size, labs):
+        """
+        Create a figure canvas
+        """
+
+        fig = Figure()
+        axis = fig.add_subplot(111)
+        canvas = FigureCanvas(self, -1, fig)
+        canvas.SetMinSize(size)
+        fig.suptitle(labs['title'])
+        axis.set_xlabel(labs['x'])
+        axis.set_ylabel(labs['y'])
+
+        return dict(fig=fig, axis=axis, canvas=canvas)
 
 
     def onSelect(self, event):
@@ -222,6 +276,8 @@ class CaBiD_GUI(wx.Frame):
         super().__init__(
             parent=None,
             title='Cancer Biomarker Discovery',
+            size=(1160, 800),
+            style=wx.CLOSE_BOX | wx.CAPTION,
             *args, **kwargs
         )
         
@@ -237,9 +293,6 @@ class CaBiD_GUI(wx.Frame):
         self.create_menu()
         self.CreateStatusBar()
         self.SetStatusText("Welcome to CaBiD!")
-
-        # Window settings
-        self.SetSize((750, 450))
 
 
     def create_menu(self):
