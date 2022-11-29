@@ -1,9 +1,28 @@
 """
-Data Curation Tools
+CaBiD Data Curation
+-------------------
 
-By Tony Kabilan Okeke <tko35@drexel.edu>
+Author: Tony Kabilan Okeke <tko35@drexel.edu>
 
-This module contains functions for data curation.
+Functions & Classes
+-------------------
+geodlparse(acc, datadir='', silent=False, make_dir=False, cache=False)
+    Download, parse and cache data from GEO.
+    This fuction only downloads GSE and GPL data.
+CuMiDa()
+    Class for downloading gene expression matrices from GEO, parsing them and
+    combining them with Ensembl gene IDs from the corresponding GPL.
+
+__main__
+---------
+This module can be run as a script to download, parse and cache data from GEO.
+This script will download 21 cancer gene expression datasets from CuMiDa,
+each of which was run on the Affymetrix Human Genome U133 Plus 2.0 Array
+(GPL570). The selected datasets each include 2 classes - a 'normal' group and
+a 'cancer' group. The script will store the gene expression data for each
+patient in a SQLite database (CaBiD.db).
+To locate the downloaded data, run the following command in a terminal:
+    python -c "import utils; print(utils.datadir())"
 """
 
 # Import necessary modules
@@ -23,7 +42,7 @@ import re
 
 # Try to import cPickle
 try:
-    import _pickle as pickle
+    import _pickle as pickle  # This is faster
 except ImportError:
     import pickle
 
@@ -337,22 +356,10 @@ class CuMiDa:
     def __str__(self) -> str:
         """String representation of the CuMiDa class"""
 
-        return f"CuMiDa(datadir={self.datadir})"
+        return self.__repr__()
 
 
-def main():
-    """
-    Curate Gene Expression data from CuMiDa and generate a SQLite database.
-
-    This function will download 21 cancer gene expression datasets from CuMiDa
-    each of which was run on the Affymetrix Human Genome U133 Plus 2.0 Array
-    (GPL570). The selected datasets each include 2 classes - a 'normal' group
-    and a 'cancer' group. The GPL570 array contains 54,676 probes. See the
-    README for more details.
-
-    The datasets will be stored in a SQLite database in the project directory.
-    """
-
+def curate() -> None:
     # Initialize CuMiDa
     cumida = CuMiDa()
 
@@ -365,7 +372,7 @@ def main():
 
     # Initialize database connection
     dbpath = utils.datadir() / 'CaBiD.db'
-    db = utils.SQLite(dbpath)
+    db = utils.CaBiD_db(dbpath)
 
     # Drop any existing tables
     db.drop_table('datasets')
@@ -413,4 +420,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main();
+    curate();
