@@ -33,12 +33,9 @@ from pathlib import Path
 from typing import Union
 from rich import print
 
+import json, os, re, warnings
 import pandas as pd
 import numpy as np
-import warnings
-import json
-import os
-import re
 
 # Try to import cPickle
 try:
@@ -46,7 +43,7 @@ try:
 except ImportError:
     import pickle
 
-# Import custom modules
+# Import utilities
 import utils
 
 
