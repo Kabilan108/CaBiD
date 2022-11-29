@@ -14,6 +14,10 @@ geodlparse(acc, datadir='', silent=False, make_dir=False, cache=False)
 CuMiDa()
     Class for downloading gene expression matrices from GEO, parsing them and
     combining them with Ensembl gene IDs from the corresponding GPL.
+curate
+    Download the datasets from CuMiDa and build the CaBiD database.
+CaBiD_check()
+    Check if the CaBiD database exists and create it if it doesn't.
 
 __main__
 ---------
@@ -416,6 +420,19 @@ def curate() -> None:
             samples.to_sql('expression', db.conn, if_exists='append', index=False)
 
             pbar.update(1)
+
+
+def CaBiD_check() -> None:
+    """
+    Check if the CaBiD database exists and create it if it doesn't.
+    """
+    dbpath = utils.datadir() / 'CaBiD.db'
+    if not dbpath.exists():
+        curate();
+    else:
+        with utils.CaBiD_db(dbpath) as db:
+            if not (db.check_table('expression') and db.check_table('datasets')):
+                curate();
 
 
 if __name__ == '__main__':
