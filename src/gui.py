@@ -156,10 +156,11 @@ class GUIPanel(wx.Panel):
 
         # Volcano Plot
         self.volcano = self.create_figure((500,300), {
-            'title': 'Volcano Plot', 'x': 'Fold Change', 'y': '-log10(p-value)'
+            'title': 'Volcano Plot\nNormal - Cancer', 'x': 'Fold Change',
+            'y': '-log10(p-value)'
         })
         self.volcano['fig'].subplots_adjust(  # type: ignore
-            left=0.15, right=0.9, top=0.9, bottom=0.15
+            left=0.15, right=0.9, top=0.85, bottom=0.15
         )
 
         # Heatmap
