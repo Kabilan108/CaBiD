@@ -2,6 +2,8 @@
 CaBiD Data Curation
 -------------------
 
+This module contains functions for curation of data from GEO and CuMiDa.
+
 Author: Tony Kabilan Okeke <tko35@drexel.edu>
 
 Functions & Classes
