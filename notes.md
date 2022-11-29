@@ -37,3 +37,9 @@
 - Cancer Type
 - Gene Series
   - Show description of dataset in status bar
+
+### 2022-11-28
+
+- Mergre CabId_db with SQLite
+- Remove unused fucntions
+- move check_db to app.py
