@@ -16,7 +16,7 @@ CuMiDa()
     combining them with Ensembl gene IDs from the corresponding GPL.
 curate
     Download the datasets from CuMiDa and build the CaBiD database.
-CaBiD_check()
+datacheck()
     Check if the CaBiD database exists and create it if it doesn't.
 
 __main__
@@ -422,7 +422,7 @@ def curate() -> None:
             pbar.update(1)
 
 
-def CaBiD_check() -> None:
+def datacheck() -> None:
     """
     Check if the CaBiD database exists and create it if it doesn't.
     """
