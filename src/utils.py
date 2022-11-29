@@ -2,6 +2,8 @@
 CaBiD Utilities
 ---------------
 
+This module contains utility functions for CaBiD.
+
 Author: Tony Kabilan Okeke <tko35@drexel.edu>
 
 Functions & Classes
