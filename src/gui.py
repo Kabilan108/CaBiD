@@ -25,14 +25,11 @@ expression analysis on the dataset.
 # Import modules
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
 import wx
 
 # Import CaBiD modules
 from utils import datadir, CaBiD_db
 from curation import datacheck
-
-import wx.lib.mixins.inspection as wit
 
 
 class ControlBox(wx.StaticBox):
@@ -247,6 +244,10 @@ class GUIPanel(wx.Panel):
         # Retreive data from database
         self.data = self.db.retrieve_dataset(dataset)
 
+        import pickle
+        with open('data.pkl', 'wb') as f:
+            pickle.dump(self.data, f)
+
         # Reset wait state
         self.parent.SetStatusText("Ready")
         self.analyze.Enable()
@@ -298,6 +299,9 @@ class CaBiD_GUI(wx.Frame):
         self.CreateStatusBar()
         self.SetStatusText("Welcome to CaBiD!")
 
+        # Bind event for closing the window
+        self.Bind(wx.EVT_CLOSE, self.onExit)
+
 
     def create_menu(self):
         """
@@ -341,8 +345,9 @@ class CaBiD_GUI(wx.Frame):
 
 
     def onExit(self, event):
-        """Handle exit menu item click"""
-        self.Close()
+        """Close the window"""
+        self.db.close()
+        self.Destroy()
 
     
     def onAbout(self, event):
@@ -354,21 +359,9 @@ class CaBiD_GUI(wx.Frame):
         )
 
 
-class CaBiD_App(wx.App, wit.InspectionMixin):
-    def OnInit(self):
-        self.Init()
-        self.frame = CaBiD_GUI()
-        self.frame.Show()
-        self.SetTopWindow(self.frame)
-        return True
-
-
 if __name__ == '__main__':
     # Run the GUI
-    # app = wx.App()
-    # CaBiD_GUI().Show();
-    # app.MainLoop();
-    # del app
-
-    app = CaBiD_App(redirect=False)
-    app.MainLoop()
+    app = wx.App()
+    CaBiD_GUI().Show();
+    app.MainLoop();
+    del app
