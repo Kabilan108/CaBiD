@@ -26,9 +26,12 @@ expression analysis on the dataset.
 import pandas as pd
 import numpy as np
 import wx
+import wx.lib.mixins.inspection as wit
+from functools import wraps
 
 # Import CaBiD modules
 from utils import datadir, CaBiD_db
+from curation import datacheck
 
 
 class ControlBox(wx.StaticBox):
@@ -41,7 +44,7 @@ class ControlBox(wx.StaticBox):
         assert isinstance(inputs, dict), 'inputs must be a dictionary'
         
         # Initialize the wx.StaticBox class
-        super().__init__(parent, -1, label=label)
+        super().__init__(parent, -1, label=label, style=wx.ALIGN_CENTER)
 
         # Create sizer
         self.sizer = wx.StaticBoxSizer(self, wx.VERTICAL)
@@ -56,11 +59,21 @@ class ControlBox(wx.StaticBox):
                 if 'value' not in inputargs:
                     raise ValueError("Must provide value for selector")
 
+                # Add label
+                label_text = label.replace('_', ' ').capitalize()
+                self.sizer.Add(
+                    wx.StaticText(self, -1, label=label_text), 0, 
+                    wx.ALIGN_LEFT | wx.LEFT, 15
+                )
+
                 # Create a selector
                 self.input[label] = wx.ComboBox(self, -1, inputargs['value'][label],
                     choices=inputargs['choices'][label])
                 self.input[label].name = label
-                self.sizer.Add(self.input[label], 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 7)
+                self.sizer.Add(
+                    self.input[label], 0, 
+                    wx.EXPAND | wx.BOTTOM | wx.LEFT | wx.RIGHT, 15
+                )
 
                 # Bind events
                 self.input[label].Bind(
@@ -79,74 +92,77 @@ class GUIPanel(wx.Panel):
     ---------
     onSelect
         Populate GSE selector with GSEs for selected cancer type
+    onAnalyze
+        Perform differential gene expression analysis on selected dataset
     """
 
     def __init__(self, parent):
-
+        # Initialize the wx.Panel class
         super().__init__(parent)
 
-        pass
+        # Define database connection from the parent class
+        self.parent = parent
+        self.db = parent.db
 
-        # # Create a SQLite object
-        # dbpath = datadir() / 'CaBiD.db'
-        # if dbpath.exists():
-        #     self.db = CaBiD_db(dbpath)
-        # else:
-        #     raise FileNotFoundError(f'Could not find database at {dbpath}')
+        # Get choices for selectors
+        self.select_choices = {
+            'cancer_type': (self.db
+                .select("SELECT DISTINCT CANCER FROM `datasets`")['CANCER']
+                .tolist()),
+            'gse': []
+        }
 
-        # # Get choices for selectors
-        # self.choices = dict(
-        #     cancer_type=(self.db.select("SELECT `CANCER` FROM datasets")
-        #         ['CANCER'].unique().tolist()),
-        #     gse=[]
-        # )
+        # Create sizers
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        left_sizer = wx.BoxSizer(wx.VERTICAL)
+        right_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        # # Create sizers
-        # sizer = wx.BoxSizer(wx.HORIZONTAL)
+        # Create controls
+        self.dataset_box = ControlBox(
+            parent=self,
+            label='Select a Dataset',
+            inputs={'cancer_type': 'selector', 'gse': 'selector'},
+            choices=self.select_choices,
+            value={'cancer_type': '', 'gse': ''}
+        )
 
-        # # Create controls
-        # self.dataset_box = ControlBox(
-        #     parent=self,
-        #     label='Select a Dataset',
-        #     inputs={'cancer_type': 'selector', 'gse': 'selector'},
-        #     choices=self.choices,
-        #     value={'cancer_type': self.choices['cancer_type'][0], 'gse': ''}
-        # )
+        # Add 'Analyze' button
+        self.analyze = wx.Button(self, label="Analyze")
+        self.analyze.Bind(wx.EVT_BUTTON, self.onAnalyze)
 
-        # # Add button
-        # self.analyze = wx.Button(self, label="Analyze")
-        # self.analyze.Bind(wx.EVT_BUTTON, self.onAnalyze)
+        # Add controls to sizer
+        left_sizer.Add(self.dataset_box.sizer, 0)
+        left_sizer.AddSpacer(10)
+        left_sizer.Add(self.analyze, 0, wx.ALIGN_LEFT | wx.LEFT, 50)
 
+        # Add sizers to main sizer
+        sizer.Add(left_sizer, 1, wx.ALIGN_LEFT | wx.ALL, 10)
+        sizer.Add(right_sizer, 0, wx.EXPAND)
 
-        # # Add controls to sizer
-        # sizer.Add(self.dataset_box.sizer, 0)
-        # # sizer.AddSpacer(15)
-        # sizer.Add(self.analyze, 0, wx.ALIGN_BOTTOM)
-
-        # self.SetSizer(sizer)
+        # Set sizer
+        self.SetSizer(sizer)
 
 
     def onSelect(self, event):
         """
-        Handle selection events
+        Populate GSE selector with GSEs for selected cancer type
         """
         
-        # obj = event.GetEventObject()
+        # Get the triggering control
+        obj = event.GetEventObject()
 
-        # if obj.name == 'cancer_type':
-        #     # Get GSEs for selected cancer type
-        #     res = self.db.select(
-        #         f"SELECT GSE FROM `datasets` WHERE CANCER = '{obj.GetValue()}'"
-        #     )
+        if obj.name == 'cancer_type':
+            # Get GSEs for the selected cancer type
+            gse = self.db.select(
+                f"SELECT GSE FROM `datasets` WHERE CANCER = '{obj.GetValue()}'"
+            )
 
-        #     # Add options to GSE selector
-        #     self.dataset_box.input['gse'].Clear()
-        #     self.dataset_box.input['gse'].AppendItems(res['GSE'].tolist())
-        #     self.dataset_box.input['gse'].SetValue(res['GSE'].tolist()[0])
-        # else:
-        #     event.Skip()
-
-        pass
+            # Add options to GSE selector
+            self.dataset_box.input['gse'].Clear()
+            self.dataset_box.input['gse'].AppendItems(gse['GSE'].tolist())
+            self.dataset_box.input['gse'].SetValue(gse['GSE'].tolist()[0])
+        else:
+            event.Skip()
 
 
     def onAnalyze(self, event):
@@ -155,21 +171,50 @@ class GUIPanel(wx.Panel):
         """
 
         # Get values from text inputs
-        # values = dict()
-        # for label, input in self.dataset_box.input.items():
-        #     values[label] = input.GetValue()
-        #     if values[label] == '':
-        #         raise ValueError(f"{label} cannot be empty")
+        cancer_type = self.dataset_box.input['cancer_type'].GetValue()
+        gse = self.dataset_box.input['gse'].GetValue()
+        dataset = (gse, cancer_type)
+
+        # Set wait state
+        self.parent.SetStatusText("Analyzing %s..." % gse)
+        self.analyze.Disable()
+        wait = wx.BusyCursor()
+
+        # Prompt if no dataset is selected
+        if cancer_type == '' or gse == '':
+            wx.MessageBox('Please select a dataset to analyze', 'Error')
+            self.analyze.Enable()
+            return
 
         # Retreive data from database
-        # self.data = self.db.retrieve_dataset()
+        self.data = self.db.retrieve_dataset(dataset)
 
-        print('Analyze button clicked')
+        # Reset wait state
+        self.parent.SetStatusText("Ready")
+        self.analyze.Enable()
+        
+        print('Analyzed!')
 
 
 class CaBiD_GUI(wx.Frame):
     """
     Main window class for the GUI
+
+    Methods
+    -------
+    create_menu
+        Create the menu bar for the GUI
+
+    Callbacks
+    ---------
+    onSave
+        Save generated results to a zip file
+    onLoad
+        Prompt user to load a csv file containing a gene expression matrix
+    onExit
+        Handle exit menu item click
+    onAbout
+        Show an 'About' dialog
     """
 
     def __init__(self, *args, **kwargs):
@@ -179,24 +224,94 @@ class CaBiD_GUI(wx.Frame):
             title='Cancer Biomarker Discovery',
             *args, **kwargs
         )
+        
+        # Check if database exists
+        datacheck();
 
-        # Check if the database exists
-        # if dbpath.exists():
-        #     with CaBiD_db(dbpath) as db:
-        #         if  db.check_table('expression') and db.check_table('datasets'):
-        #             # Connect to the databa
-        # else:
-        #     flag = False
+        # Connect to database
+        dbpath = datadir() / 'CaBiD.db'
+        self.db = CaBiD_db(dbpath)
 
-        # # Window settings
-        # self.SetSize((750, 450))
-        # self.panel = GUIPanel(self)
+        # Create panel and menus
+        self.panel = GUIPanel(self)
+        self.create_menu()
+        self.CreateStatusBar()
+        self.SetStatusText("Welcome to CaBiD!")
+
+        # Window settings
+        self.SetSize((750, 450))
+
+
+    def create_menu(self):
+        """
+        Create the menu bar for the GUI
+        """
+
+        menu_bar = wx.MenuBar()
+
+        # File menu
+        file_menu = wx.Menu()
+        save_item = file_menu.Append(wx.ID_SAVE, 'Save', 'Save results')
+        file_menu.AppendSeparator()
+        load_item = file_menu.Append(wx.ID_OPEN, 'Load', 'Load GSE matrix')
+        file_menu.AppendSeparator()
+        exit_item = file_menu.Append(wx.ID_ANY, 'Exit', 'Exit the application')
+
+        # Help menu
+        help_menu = wx.Menu()
+        about_item = help_menu.Append(wx.ID_ABOUT, 'About', 'About CaBiD')
+
+        # Bind events
+        self.Bind(wx.EVT_MENU, self.onSave, save_item)
+        self.Bind(wx.EVT_MENU, self.onLoad, load_item)
+        self.Bind(wx.EVT_MENU, self.onExit, exit_item)
+        self.Bind(wx.EVT_MENU, self.onAbout, about_item)
+
+        # Append menus to menu bar
+        menu_bar.Append(file_menu, '&File')
+        menu_bar.Append(help_menu, '&Help')
+        self.SetMenuBar(menu_bar)
+
+    
+    def onSave(self, event):
+        """Handle save menu item click"""
+        print("Save menu item clicked")
+
+
+    def onLoad(self, event):
+        """Handle load menu item click"""
+        print("Load menu item clicked")
+
+
+    def onExit(self, event):
+        """Handle exit menu item click"""
+        self.Close()
+
+    
+    def onAbout(self, event):
+        """Handle about menu item click"""
+        wx.MessageBox(
+            'Cancer Biomarker Discovery (CaBiD)\n'
+            'Version 0.1\n\n'
+            'Created by: Tony K. Okeke, Ali Youssef & Cooper Molloy\n'
+        )
+
+
+class CaBiD_App(wx.App, wit.InspectionMixin):
+    def OnInit(self):
+        self.Init()
+        self.frame = CaBiD_GUI()
+        self.frame.Show()
+        self.SetTopWindow(self.frame)
+        return True
 
 
 if __name__ == '__main__':
     # Run the GUI
-    app = wx.App()
-    frame = CaBiD_GUI()
-    frame.Show()
+    # app = wx.App()
+    # CaBiD_GUI().Show();
+    # app.MainLoop();
+    # del app
+
+    app = CaBiD_App(redirect=False)
     app.MainLoop()
-    del app
