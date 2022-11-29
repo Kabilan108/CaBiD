@@ -100,3 +100,10 @@ accession numbers, cancer types, and sample sizes for each dataset.
 │   └── tools.py        [Module with custom functions and classes]
 └── thumb.png           [Project thumbnail]
 ```
+
+## Potential Improvements and Further Development
+
+- Add more datasets to the database
+- Allow users to upload their own series matrix files for analysis
+- Utilize the `limma` package in R to perform differential expression analysis
+  to generate more accurate results.
