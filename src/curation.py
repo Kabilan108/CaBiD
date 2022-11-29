@@ -421,6 +421,9 @@ def curate() -> None:
 
             pbar.update(1)
 
+    # Close the database connection
+    db.close()
+
 
 def datacheck() -> None:
     """
