@@ -161,13 +161,17 @@ class GUIPanel(wx.Panel):
         self.volcano = self.create_figure((500,300), {
             'title': 'Volcano Plot', 'x': 'Fold Change', 'y': '-log10(p-value)'
         })
-        self.volcano['fig'].subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.15)
+        self.volcano['fig'].subplots_adjust(  # type: ignore
+            left=0.15, right=0.9, top=0.9, bottom=0.15
+        )
 
         # Heatmap
         self.heatmap = self.create_figure((830,300), {
             'title': 'Heatmap', 'x': 'Samples', 'y': 'Genes'
         })
-        self.heatmap['fig'].subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.15)
+        self.heatmap['fig'].subplots_adjust(  # type: ignore
+            left=0.1, right=0.9, top=0.9, bottom=0.15
+        )
 
         # Add figures to sizer
         results_top.Add(self.volcano['canvas'], 0, wx.ALL, 15)
