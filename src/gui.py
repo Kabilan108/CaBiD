@@ -27,9 +27,13 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
 import wx
 
+import seaborn as sns
+import numpy as np
+
 # Import CaBiD modules
 from utils import datadir, CaBiD_db
 from curation import datacheck
+from dge import dge, plot_volcano
 
 
 class ControlBox(wx.StaticBox):
@@ -132,6 +136,13 @@ class GUIPanel(wx.Panel):
         # Add 'Analyze' button
         self.analyze = wx.Button(self, label="Analyze")
         self.analyze.Bind(wx.EVT_BUTTON, self.onAnalyze)
+
+        # Add a description box with info about the analysis procedure
+        # Controls for pval controls, etc
+        # Independent ttest (uneqial variance)
+        # Pval correction - Benjamini-Hochberg correction for false discovery rate
+        self.fc_thr = 2.0
+        self.p_thr = 0.05
 
         # Add controls to sizer
         left_sizer.Add(self.dataset_box.sizer, 0)
@@ -245,9 +256,28 @@ class GUIPanel(wx.Panel):
         # Retreive data from database
         self.data = self.db.retrieve_dataset(dataset)
 
-        import pickle
-        with open('data.pkl', 'wb') as f:
-            pickle.dump(self.data, f)
+        # Run analysis
+        self.dge = dge(self.data, self.fc_thr, self.p_thr)
+        
+        #self.volcano['axis'].clear()
+        #self.volcano['axis'].grid()
+        #self.volcano['canvas'].draw()
+        # sns.scatterplot(
+        #     data=dge, x='fc', y='-log10(adj pval)', hue='de',
+        #     ax=ax, s=20, alpha=0.5, palette=['#999999', '#ff0000']
+        # )
+        # ax.axhline(-np.log10(0.05), color='#999999', linestyle='--')
+        # ax.axvline(2, color='#999999', linestyle='--')
+        # ax.axvline(-2, color='#999999', linestyle='--')
+        # sns.move_legend(
+        #     ax, "lower center", ncol=3, title=None,
+        #     frameon=False, bbox_to_anchor=(.5, 1),
+        # )
+        # sns.despine()
+
+        # Volcano Plot
+        plot_volcano(self.volcano['axis'], self.dge)
+        self.volcano['canvas'].draw()
 
         # Reset wait state
         self.parent.SetStatusText("Ready")
