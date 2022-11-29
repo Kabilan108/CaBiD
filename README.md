@@ -20,20 +20,27 @@ to illustrate the expression of various genes in the selected cancer type.
 
 ![Project Sketch](Project Sketch.jpg)
 
+## Database Schema
+
+![Database Schema](ERD.png)
+
 ## Usage
 
-This project depends on the `wxPython` package which requires additional
-installation steps for Linux machines. See the
-[wxPython documentation](https://wxpython.org/pages/downloads/) for more details.
-The instructions below will work on Windows and MacOS.
+Run the following commands in your terminal to set up the environment for
+running our application, build the database, and run the application.  
+
+> **Note:** The CaBiD GUI depends on wxPython, which may not be compatible with
+> some Linux distributions. If you are using Linux, you may need to install
+> gtk3 and wxPython from [source](https://wxpython.org/pages/downloads/).
+> Also, for grading purposes, please use the `bmes550` branch of this repository.
 
 ```bash
 # Clone the repository
-git clone git@github.com:Kabilan108/CaBiD.git
+git clone -b bmes550 git@github.com:Kabilan108/CaBiD.git
 cd CaBiD
 
 # Set up conda environment
-conda env create -f env.yml -y
+conda env create -f env.yml
 conda activate cabid
 
 # Download necessary data and build the project database
@@ -41,12 +48,6 @@ python src/curation.py
 ```
 
 ## The Dataset
-
-This function will download 21 cancer gene expression datasets from CuMiDa
-    each of which was run on the Affymetrix Human Genome U133 Plus 2.0 Array
-    (GPL570). The selected datasets each include 2 classes - a 'normal' group
-    and a 'cancer' group. The GPL570 array contains 54,676 probes. See the
-    README for more details.
 
 21 cancer gene expression datasets were selected from the Curated Microarray
 Database, [CuMiDa](https://sbcb.inf.ufrgs.br/cumida). Each dataset was
@@ -99,7 +100,3 @@ accession numbers, cancer types, and sample sizes for each dataset.
 │   └── tools.py        [Module with custom functions and classes]
 └── thumb.png           [Project thumbnail]
 ```
-
-## API-Keys
-
-## File path assumptions
