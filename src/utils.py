@@ -1,28 +1,41 @@
 """
-Utilities
+CaBiD Utilities
+---------------
 
-By Tony Kabilan Okeke <tko35@drexel.edu>
+Author: Tony Kabilan Okeke <tko35@drexel.edu>
 
-This module contains utility functions.
+Functions & Classes
+-------------------
+config
+    Configuration class with paths to data and cache directories
+ispc
+    Check if the system is a PC
+cachedir
+    Get the cache directory
+tempdir
+    Get a temporary directory
+slugify
+    Convert a URL to a clean filename (Based on Django's slugify)
+isnonemptyfile
+    Check if a file exists and is not empty
+datadir
+    Return the path to project data directory
+downloadurl
+    Download a URL to a file
+CaBiD_db
+    Class for connecting to and querying the CaBiD database
 """
 
 # Imports
-import os
-import platform
-import re
-import shutil
-import sqlite3
-import tempfile
-import unicodedata
+import os, platform, re, requests, shutil, sqlite3, tempfile, unicodedata
 import _pickle as pickle
-from itertools import islice
-from pathlib import Path
-from typing import Any, Tuple
 
-import requests
-from pandas import DataFrame
 from rich import print
+from pathlib import Path
 from tqdm.auto import tqdm
+from pandas import DataFrame
+from itertools import islice
+from typing import Any, Tuple
 
 
 class config:
@@ -47,6 +60,7 @@ class config:
 def ispc() -> bool:
     """
     Check if the system is a PC
+    Based on bmes.ispc() by Ahmet Sacan
     """
 
     if not hasattr(ispc, 'value'):
@@ -145,6 +159,7 @@ def isnonemptyfile(file: str) -> bool:
 def datadir() -> Path:
     """
     Return the path to a data directory
+    Based on bmes.datadir() by Ahmet Sacan
     """
 
     # Check if data directory is set
@@ -256,33 +271,6 @@ def downloadurl(url: str, file: str='', overwrite: bool=False,
                         str(r.status_code))
 
     return file
-
-
-def iohead(file: str |Path, n: int=5) -> None:
-    """
-    Print the first n lines of a file to the console
-
-    Parameters
-    ----------
-    file : str or Path
-        Path to file
-    n : int, optional
-        Number of lines to print, by default 10
-    """
-
-    # Check inputs
-    if isinstance(file, str):  file = Path(file)
-    assert isinstance(file, Path), 'file must be a valid path'
-    assert file.exists(), 'file does not exist'
-    assert isinstance(n, int) and n > 0, 'n must be a positive integer'
-
-    # Open file
-    with open(file, 'r') as f:
-        for line in islice(f, n):
-            if len(line) > 80:
-                print(line[:80] + '...')
-            else:
-                print(line.rstrip())
 
 
 class CaBiD_db:
