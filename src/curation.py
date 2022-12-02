@@ -39,15 +39,9 @@ from pathlib import Path
 from typing import Union
 from rich import print
 
-import json, os, re, warnings
+import json, os, pickle, re, warnings
 import pandas as pd
 import numpy as np
-
-# Try to import cPickle
-try:
-    import _pickle as pickle  # This is faster
-except ImportError:
-    import pickle
 
 # Import utilities
 import utils

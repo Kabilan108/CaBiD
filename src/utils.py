@@ -29,15 +29,14 @@ CaBiD_db
 """
 
 # Imports
-import os, platform, re, requests, shutil, sqlite3, tempfile, unicodedata
-import _pickle as pickle
-
-from rich import print
-from pathlib import Path
-from tqdm.auto import tqdm
-from pandas import DataFrame
-from itertools import islice
 from typing import Any, Tuple
+from pandas import DataFrame
+from tqdm.auto import tqdm
+from pathlib import Path
+from rich import print
+
+import os, pickle, platform, re, requests, shutil, sqlite3, tempfile, \
+    unicodedata
 
 
 class config:
