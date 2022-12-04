@@ -336,10 +336,6 @@ class GUIPanel(wx.Panel):
         # Run analysis
         self.dge = dge(self.data, self.fc_thr, self.p_thr)
 
-        import pickle
-        with open('data.pkl', 'wb') as f:
-            pickle.dump(self.data, f)
-
         # Populate DGE table
         self.populate_dge_table()
 
@@ -348,7 +344,7 @@ class GUIPanel(wx.Panel):
         self.volcano['canvas'].draw()  # type: ignore
 
         # Heatmap
-        plot_heatmap(self.heatmap['axis'], self.dge)
+        plot_heatmap(self.heatmap['fig'], self.heatmap['axis'], self.data)
         self.heatmap['canvas'].draw()  # type: ignore
 
         # Reset wait state
