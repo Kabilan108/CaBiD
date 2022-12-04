@@ -348,8 +348,8 @@ class GUIPanel(wx.Panel):
         self.volcano['canvas'].draw()  # type: ignore
 
         # Heatmap
-        # plot_heatmap(self.heatmap['axis'], self.dge)
-        # self.heatmap['canvas'].draw()
+        plot_heatmap(self.heatmap['axis'], self.dge)
+        self.heatmap['canvas'].draw()  # type: ignore
 
         # Reset wait state
         self.parent.SetStatusText("Ready")
