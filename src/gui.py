@@ -254,6 +254,14 @@ class GUIPanel(wx.Panel):
                 hmap=fig.add_subplot(gs[1, 2]),
                 cbar=fig.add_subplot(gs[1, 3]),
             )
+            for ax in axis.values():
+                if ax is not axis['hmap']:
+                    ax.set_axis_off()
+                ax.set_xticks([])
+                ax.set_yticks([])
+            axis['hmap'].text(
+                0.5, 0.5, 'Heatmap', ha='center', va='center', fontsize=20
+            )
             canvas = FigureCanvas(self, -1, fig)
             canvas.SetMinSize(size)
         elif figtype == 'volcano':
