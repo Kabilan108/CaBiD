@@ -25,6 +25,7 @@ expression analysis on the dataset.
 # Import modules
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
+from matplotlib import gridspec
 import wx
 
 # Import CaBiD modules
@@ -207,7 +208,7 @@ class GUIPanel(wx.Panel):
         results_top.Add(self.dge_table, 0, wx.ALL, 15)
 
         # Volcano Plot
-        self.volcano = self.create_figure((500,300), {
+        self.volcano = self.create_figure((500,300), 'volcano', {
             'title': 'Normal - Cancer', 'x': 'Fold Change',
             'y': '-log10(p-value)'
         })
@@ -216,7 +217,7 @@ class GUIPanel(wx.Panel):
         )
 
         # Heatmap
-        self.heatmap = self.create_figure((830,300), {
+        self.heatmap = self.create_figure((830,300), 'heatmap', {
             'title': 'Heatmap', 'x': 'Samples', 'y': 'Genes'
         })
         self.heatmap['fig'].subplots_adjust(  # type: ignore
@@ -235,18 +236,35 @@ class GUIPanel(wx.Panel):
         self.SetSizer(sizer)
 
 
-    def create_figure(self, size, labs):
+    def create_figure(self, size, figtype, labs):
         """
         Create a figure canvas
         """
 
         fig = Figure()
-        axis = fig.add_subplot(111)
-        canvas = FigureCanvas(self, -1, fig)
-        canvas.SetMinSize(size)
-        axis.set_title(labs['title'])
-        axis.set_xlabel(labs['x'])
-        axis.set_ylabel(labs['y'])
+        if figtype == 'heatmap':
+            gs = gridspec.GridSpec(
+                2, 4, width_ratios=[0.1, 0.04, 1, 0.02], height_ratios=[0.25, 1],
+                wspace=0.02, hspace=0.02
+            )
+            axis = dict(
+                samp_dendro=fig.add_subplot(gs[1, 0]),
+                gene_dendro=fig.add_subplot(gs[0, 2]),
+                anot=fig.add_subplot(gs[1, 1]),
+                hmap=fig.add_subplot(gs[1, 2]),
+                cbar=fig.add_subplot(gs[1, 3]),
+            )
+            canvas = FigureCanvas(self, -1, fig)
+            canvas.SetMinSize(size)
+        elif figtype == 'volcano':
+            axis = fig.add_subplot(111)
+            canvas = FigureCanvas(self, -1, fig)
+            canvas.SetMinSize(size)
+            axis.set_title(labs['title'])
+            axis.set_xlabel(labs['x'])
+            axis.set_ylabel(labs['y'])
+        else:
+            raise ValueError("Invalid figure type")
 
         return dict(fig=fig, axis=axis, canvas=canvas)
 
@@ -319,7 +337,7 @@ class GUIPanel(wx.Panel):
 
         # Volcano Plot
         plot_volcano(self.volcano['axis'], self.dge)
-        self.volcano['canvas'].draw()
+        self.volcano['canvas'].draw()  # type: ignore
 
         # Heatmap
         # plot_heatmap(self.heatmap['axis'], self.dge)
