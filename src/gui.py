@@ -4,7 +4,7 @@ CaBiD GUI
 
 This module contains the GUI for CaBiD.
 
-Author: Tony Kabilan Okeke <tko35@drexel.edu>
+Author: Ali Youssef <amy57@drexel.edu>
 
 Functions & Classes
 -------------------
@@ -27,19 +27,41 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
 import wx
 
-import seaborn as sns
-import numpy as np
-
 # Import CaBiD modules
+from dge import dge, plot_volcano, plot_heatmap
 from utils import datadir, CaBiD_db
 from curation import datacheck
-from dge import dge, plot_volcano
 
 
 class ControlBox(wx.StaticBox):
     """
     Custom `StaticBox` for UI controls
     """
+
+    class TextInput(wx.BoxSizer):
+        """
+        Custom text input with label
+        """
+
+        def __init__(self, parent, label):
+            # Initialize BoxSizer
+            super().__init__(wx.HORIZONTAL)
+
+            # Define font
+            font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, 
+                           wx.FONTWEIGHT_NORMAL)
+            
+            # Create label
+            self.label = wx.StaticText(parent, label=label)
+            self.label.SetFont(font)
+            self.Add(self.label, 1, wx.RIGHT)
+
+            # Create text input
+            self.field = wx.TextCtrl(parent, size=(60,20), style=wx.TE_PROCESS_ENTER)
+            self.field.name = self.label.GetLabelText()  # type: ignore
+            self.field.SetFont(font)
+            self.Add(self.field, 1)
+
 
     def __init__(self, parent, label, inputs, **inputargs):
 
@@ -81,6 +103,22 @@ class ControlBox(wx.StaticBox):
                 self.input[label].Bind(
                     wx.EVT_COMBOBOX, self.GetParent().onSelect
                 )
+            elif input_type == 'text':
+                # Create a text input
+                _label = f"{label.replace('__', '-').replace('_', ' ')}"
+                self.input[label] = self.TextInput(self, _label)
+                self.sizer.Add(self.input[label], 0, wx.EXPAND | wx.ALL, 5)
+
+                if 'value' in inputargs:
+                    self.input[label].field.SetValue(inputargs['value'][label])
+
+                # Bind events
+                self.input[label].field.Bind(
+                    wx.EVT_CHAR, self.GetParent().acceptInput
+                )
+                # self.input[label].field.Bind(
+                #     wx.EVT_TEXT_ENTER, self.GetParent().onSelect
+                # )
             else:
                 raise ValueError("Invalid input type")
         self.SetMinSize((200, -1))
@@ -137,15 +175,18 @@ class GUIPanel(wx.Panel):
         self.analyze = wx.Button(self, label="Analyze")
         self.analyze.Bind(wx.EVT_BUTTON, self.onAnalyze)
 
-        # Add a description box with info about the analysis procedure
-        # Controls for pval controls, etc
-        # Independent ttest (uneqial variance)
-        # Pval correction - Benjamini-Hochberg correction for false discovery rate
-        self.fc_thr = 2.0
-        self.p_thr = 0.05
+        # Define controls for analysis
+        self.threshold_box = ControlBox(
+            parent=self,
+            label='Thresholds for Analysis',
+            inputs={'p__value': 'text', 'fold_change': 'text'},
+            value={'p__value': '0.05', 'fold_change': '2'}
+        )
 
         # Add controls to sizer
         left_sizer.Add(self.dataset_box.sizer, 0)
+        left_sizer.AddSpacer(10)
+        left_sizer.Add(self.threshold_box.sizer, 0)
         left_sizer.AddSpacer(10)
         left_sizer.Add(self.analyze, 0, wx.ALIGN_LEFT | wx.LEFT, 50)
 
@@ -157,7 +198,7 @@ class GUIPanel(wx.Panel):
 
         # DGE Table
         self.dge_table = wx.ListCtrl(
-            self, -1, size=(300, 50),
+            self, -1, size=(310, 300),
             style=wx.LC_REPORT | wx.BORDER_SUNKEN
         )
         for i, col in enumerate(['Gene', 'Fold Change', 'Adj p-value']):
@@ -167,7 +208,7 @@ class GUIPanel(wx.Panel):
 
         # Volcano Plot
         self.volcano = self.create_figure((500,300), {
-            'title': 'Volcano Plot\nNormal - Cancer', 'x': 'Fold Change',
+            'title': 'Normal - Cancer', 'x': 'Fold Change',
             'y': '-log10(p-value)'
         })
         self.volcano['fig'].subplots_adjust(  # type: ignore
@@ -203,7 +244,7 @@ class GUIPanel(wx.Panel):
         axis = fig.add_subplot(111)
         canvas = FigureCanvas(self, -1, fig)
         canvas.SetMinSize(size)
-        fig.suptitle(labs['title'])
+        axis.set_title(labs['title'])
         axis.set_xlabel(labs['x'])
         axis.set_ylabel(labs['y'])
 
@@ -232,6 +273,14 @@ class GUIPanel(wx.Panel):
             event.Skip()
 
 
+    def acceptInput(self, event):
+        """
+        Acceptable inputs for analysis thresholds
+        """
+
+        event.Skip()
+
+
     def onAnalyze(self, event):
         """
         Handle button click
@@ -241,6 +290,8 @@ class GUIPanel(wx.Panel):
         cancer_type = self.dataset_box.input['cancer_type'].GetValue()
         gse = self.dataset_box.input['gse'].GetValue()
         dataset = (gse, cancer_type)
+        self.p_thr = float(self.threshold_box.input['p__value'].field.GetValue())
+        self.fc_thr = float(self.threshold_box.input['fold_change'].field.GetValue())
 
         # Set wait state
         self.parent.SetStatusText("Analyzing %s..." % gse)
@@ -258,32 +309,50 @@ class GUIPanel(wx.Panel):
 
         # Run analysis
         self.dge = dge(self.data, self.fc_thr, self.p_thr)
-        
-        #self.volcano['axis'].clear()
-        #self.volcano['axis'].grid()
-        #self.volcano['canvas'].draw()
-        # sns.scatterplot(
-        #     data=dge, x='fc', y='-log10(adj pval)', hue='de',
-        #     ax=ax, s=20, alpha=0.5, palette=['#999999', '#ff0000']
-        # )
-        # ax.axhline(-np.log10(0.05), color='#999999', linestyle='--')
-        # ax.axvline(2, color='#999999', linestyle='--')
-        # ax.axvline(-2, color='#999999', linestyle='--')
-        # sns.move_legend(
-        #     ax, "lower center", ncol=3, title=None,
-        #     frameon=False, bbox_to_anchor=(.5, 1),
-        # )
-        # sns.despine()
+
+        import pickle
+        with open('data.pkl', 'wb') as f:
+            pickle.dump(self.data, f)
+
+        # Populate DGE table
+        self.populate_dge_table()
 
         # Volcano Plot
         plot_volcano(self.volcano['axis'], self.dge)
         self.volcano['canvas'].draw()
+
+        # Heatmap
+        # plot_heatmap(self.heatmap['axis'], self.dge)
+        # self.heatmap['canvas'].draw()
 
         # Reset wait state
         self.parent.SetStatusText("Ready")
         self.analyze.Enable()
         
         print('Analyzed!')
+
+
+    def populate_dge_table(self):
+        """
+        Populate the DGE table in the GUI
+        """
+
+        # Clear table
+        self.dge_table.DeleteAllItems()
+
+        # Keep only significant genes
+        dge = (self.dge[self.dge['adj pval'] < self.p_thr]
+            .sort_values(['fc', 'adj pval'], ascending=[False, True])
+            .round(3))
+
+        # Add rows
+        for i in range(len(dge)):
+            fc = round(dge.iloc[i]['fc'], 2)
+            p = round(dge.iloc[i]['adj pval'], 4)
+
+            self.dge_table.InsertItem(i, dge.iloc[i]['gene'])
+            self.dge_table.SetItem(i, 1, str(fc))
+            self.dge_table.SetItem(i, 2, str(p))
 
 
 class CaBiD_GUI(wx.Frame):
@@ -312,7 +381,7 @@ class CaBiD_GUI(wx.Frame):
         super().__init__(
             parent=None,
             title='Cancer Biomarker Discovery',
-            size=(1160, 800),
+            size=(1100, 750),
             style=wx.CLOSE_BOX | wx.CAPTION,
             *args, **kwargs
         )
@@ -344,7 +413,6 @@ class CaBiD_GUI(wx.Frame):
         # File menu
         file_menu = wx.Menu()
         save_item = file_menu.Append(wx.ID_SAVE, 'Save', 'Save results')
-        file_menu.AppendSeparator()
         load_item = file_menu.Append(wx.ID_OPEN, 'Load', 'Load GSE matrix')
         file_menu.AppendSeparator()
         exit_item = file_menu.Append(wx.ID_ANY, 'Exit', 'Exit the application')
@@ -372,22 +440,36 @@ class CaBiD_GUI(wx.Frame):
 
     def onLoad(self, event):
         """Handle load menu item click"""
-        print("Load menu item clicked")
+        
+        wx.MessageBox(
+            'This feature is not yet implemented.\n',
+            'Please see github.com/kabilan108/CaBiD for updates',
+        )
 
 
     def onExit(self, event):
         """Close the window"""
+
         self.db.close()
         self.Destroy()
 
     
     def onAbout(self, event):
-        """Handle about menu item click"""
-        wx.MessageBox(
-            'Cancer Biomarker Discovery (CaBiD)\n'
-            'Version 0.1\n\n'
-            'Created by: Tony K. Okeke, Ali Youssef & Cooper Molloy\n'
-        )
+        """Display an 'About' dialog"""
+
+        wx.MessageBox("""
+        Cancer Biomarker Discovery (CaBiD)
+        Version 0.1
+
+        This tool was designed to help identify biomarkers for cancer diagnosis.
+        The provided thresholds are used to filter the results of a differential
+        gene expression analysis. The results are displayed in a table and
+        volcano plot.
+        The heatmaps are generated after excluding the low variance genes from 
+        the dataset.
+
+        Created by: Tony K. Okeke, Ali Youssef & Cooper Molloy
+        """)
 
 
 if __name__ == '__main__':
