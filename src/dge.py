@@ -5,8 +5,7 @@ CaBiD Differential Gene Expression Analysis
 This module contains functions for performing differential gene expression
 analysis on the CuMiDa datasets, and generating results tables and figures.
 
-Author: Tony Kabilan Okeke <tko35@drexel.edu>
-
+Author: Cooper Molloy <dm348@drexel.edu>
 Functions & Classes
 -------------------
 sort_normal
@@ -91,10 +90,18 @@ def plot_volcano(ax, dge):
     ax.axvline(2, color='#999999', linestyle='--')
     ax.axvline(-2, color='#999999', linestyle='--')
     sns.move_legend(
-        ax, "lower center", ncol=3, title=None,
-        frameon=False, bbox_to_anchor=(.5, 1),
+        ax, "upper center", ncol=3, title=None,
+        frameon=False,  bbox_to_anchor=(.5, 1.2),
     )
-    ax.grid()
     ax.set_xlabel('Fold Change')
-    ax.set_ylabel('-log10(adj pvalue)')
-    sns.despine()
+    ax.set_ylabel('-log10(adj p-val)')
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+
+
+def plot_heatmap(ax, data):
+    """
+    Create a heatmap of all genes
+    """
+
+    pass
