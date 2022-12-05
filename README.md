@@ -65,26 +65,26 @@ store the gene expression data for sample (patient).
 
 ```
 .
-├── design.pdf          [Contains project sketch and flowchart]
-├── env.yml             [Contains project dependencies]
-├── index.yml           [Contains project details]
-├── INSTRUCTIONS.md     [Contains instructions for BMES 550 project]
-├── LICENSE.md          [Project license]
-├── notes.md            [Contains meeting notes and todo items]
-├── presentation.pptx   [Contains presentation slides]
-├── README.md           [Contains project description and installation instructions]
-├── report.docx         [Contains project report]
-├── report.pdf          [Contains project report]
-├── src                 [Contains project source code]
-│   ├── dataprep.py     [Script for preparing the machine learning dataset]
-│   ├── project.ipynb   [Notebook for running analysis]
-│   └── tools.py        [Module with custom functions and classes]
-└── thumb.png           [Project thumbnail]
+├── design.pdf        [Contains project design flowchart]
+├── env.yml           [Contains a list of project dependencies]
+├── ERD.png           [Contains the database schema]
+├── index.yml         [Contains project details]
+├── INSTRUCTIONS.md   [Contains instructions for BMES 550 project]
+├── LICENSE.md        [Project license]
+├── README.md         [Contains project description and usage instructions]
+├── report.pdf        [Contains project report]
+├── sketch.jpg        [Contains project sketch]
+├── src               [Contains project source code]  
+│   ├── curation.py   [Script for building the project database]
+│   ├── dge.py        [Module for differentially expressed gene analysis]
+│   ├── gui.py        [Script for running the GUI]
+│   └── utils.py      [Module with custom functions and classes]
+└── thumb.png         [Project thumbnail]
 ```
 
 ## Potential Improvements and Further Development
 
-- Add more datasets to the database
-- Allow users to upload their own series matrix files for analysis
+- Add more datasets to the database.
+- Allow users to upload their own series matrix files for analysis.
 - Utilize the `limma` package in R to perform differential expression analysis
   to generate more accurate results.
