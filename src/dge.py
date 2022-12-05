@@ -86,7 +86,7 @@ def dge(gse: pd.DataFrame, fc_thr: float=2.0, p_thr: float=0.05):
     return dge
 
 
-def plot_volcano(ax, dge):
+def plot_volcano(ax, dge, fc_thr: float=2.0, p_thr: float=0.05):
     """
     Create a volcano plot
     """
@@ -96,14 +96,14 @@ def plot_volcano(ax, dge):
         data=dge, x='fc', y='-log10(adj pval)', hue='de',
         ax=ax, s=20, alpha=0.5, palette=['#999999', '#ff0000']
     )
-    ax.axhline(-np.log10(0.05), color='#999999', linestyle='--')
-    ax.axvline(2, color='#999999', linestyle='--')
-    ax.axvline(-2, color='#999999', linestyle='--')
+    ax.axhline(-np.log10(p_thr), color='#999999', linestyle='--')
+    ax.axvline(fc_thr, color='#999999', linestyle='--')
+    ax.axvline(-fc_thr, color='#999999', linestyle='--')
     sns.move_legend(
         ax, "upper center", ncol=3, title=None,
         frameon=False,  bbox_to_anchor=(.5, 1.2),
     )
-    ax.set_xlabel('Fold Change')
+    ax.set_xlabel('Fold Change (Normal - Tumoral)')
     ax.set_ylabel('-log10(adj p-val)')
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
