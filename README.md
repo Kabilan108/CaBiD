@@ -6,91 +6,85 @@
 
 ## Project Proposal
 
-The goal of this project is to develop a web application to investigate 
-variations in gene expression across various cancer types. Datasets selected 
-from GEO (Gene Expression Omnibus) and CuMiDa (Curated Microarray Database) 
-will be preprocessed and curated in a SQLite database. The Dash library (python) 
-will then be used to develop a web application that will generate interactive 
-visualizations of the curated dataset. The software will identify key 
-differences in gene expression between healthy controls and patients with 
-various types of cancer. The web application will include interactive heatmaps 
-to illustrate the expression of various genes in the selected cancer type.
+The goal of this project is to develop a web application to investigate
+variations in gene expression across various cancer types. Datasets selected
+from GEO (Gene Expression Omnibus) and CuMiDa (Curated Microarray Database)
+will be preprocessed and curated in a SQLite database. The wxPython package
+will then be used to develop a GUI application that will generate visualizations
+of the user-selected dataset. The software will identify key differences in gene expression between healthy controls and tumoral samples across various cancer
+types. The GUI will include heatmaps and volcano plots to visualize the
+differences in gene expression, along with a table of the significantly
+differentially expressed genes. To find out more about the project, please
+take a look at the [project report](report.pdf). You can also take a look at
+the [project design document](design.pdf).
 
-## The Dataset
+## Usage
 
-This function will download 21 cancer gene expression datasets from CuMiDa
-    each of which was run on the Affymetrix Human Genome U133 Plus 2.0 Array
-    (GPL570). The selected datasets each include 2 classes - a 'normal' group
-    and a 'cancer' group. The GPL570 array contains 54,676 probes. See the
-    README for more details.
+Run the following commands in your terminal to set up the environment for
+running our application, build the database, and run the application.  
 
-21 cancer gene expression datasets were selected from the Curated Microarray
-Database, [CuMiDa](https://sbcb.inf.ufrgs.br/cumida). Each dataset was
-generated on the Affymetrix Human Genome U133 Plus 2.0 Array (GPL570). The
-selected datasets each include 2 classes - a 'normal' group and a 'cancer'
-group. The GPL570 array contains 54,676 probes. The table below shows the GSE
-accession numbers, cancer types, and sample sizes for each dataset.
+> **Note:** The CaBiD GUI depends on wxPython, which may not be compatible with
+> some Linux distributions. If you are using Linux, you may need to install
+> gtk3 and wxPython from [source](https://wxpython.org/pages/downloads/).
+> Also, for grading purposes, please use the `bmes550` branch of this repository.
 
-| Cancer Type |   Samples | GEO Accession |
-|:-----------:|:---------:|:-------------:|
-| Bladder     |        85 | GSE31189      |
-| Breast      |       116 | GSE42568      |
-| Breast      |        12 | GSE26910      |
-| Colorectal  |        63 | GSE8671       |
-| Colorectal  |        33 | GSE32323      |
-| Colorectal  |        18 | GSE41328      |
-| Gastric     |        24 | GSE19826      |
-| Gastric     |        20 | GSE79973      |
-| Leukemia    |        46 | GSE71935      |
-| Liver       |        91 | GSE62232      |
-| Lung        |       114 | GSE19804      |
-| Lung        |        90 | GSE18842      |
-| Lung        |        48 | GSE27262      |
-| Pancreatic  |        51 | GSE16515      |
-| Prostate    |        49 | GSE46602      |
-| Prostate    |        17 | GSE55945      |
-| Prostate    |        12 | GSE26910      |
-| Renal       |       143 | GSE53757      |
-| Renal       |        28 | GSE66270      |
-| Throat      |       103 | GSE42743      |
-| Throat      |        40 | GSE12452      |
+```bash
+# Clone the repository
+git clone -b bmes550 git@github.com:Kabilan108/CaBiD.git
+cd CaBiD
+
+# Set up conda environment
+conda env create -f env.yml
+conda activate cabid
+
+# Download necessary data and build the project database
+python src/curation.py
+
+# Run the GUI
+python src/gui.py
+```
+
+## Project Sketch
+
+<p align="center">
+  <img src="sketch.jpg" alt="Project Sketch" width="650" align="center"/>
+</p>
+
+## Database Schema
+
+Below is the database schema for the SQLite database that will be used to
+store the curated datasets. The database will contain two tables: `datasets`,
+which will store the metadata for each dataset, and `expression`, which will
+store the gene expression data for sample (patient).
+
+<p align="center">
+  <img src="ERD.png" alt="Database Schema" width="300" align="center"/>
+</p>
 
 ## Folder Structure
 
 ```
 .
-├── design.pdf          [Contains project sketch and flowchart]
-├── env.yml             [Contains project dependencies]
-├── index.yml           [Contains project details]
-├── INSTRUCTIONS.md     [Contains instructions for BMES 550 project]
-├── LICENSE.md          [Project license]
-├── notes.md            [Contains meeting notes and todo items]
-├── presentation.pptx   [Contains presentation slides]
-├── README.md           [Contains project description and installation instructions]
-├── report.docx         [Contains project report]
-├── report.pdf          [Contains project report]
-├── src                 [Contains project source code]
-│   ├── dataprep.py     [Script for preparing the machine learning dataset]
-│   ├── project.ipynb   [Notebook for running analysis]
-│   └── tools.py        [Module with custom functions and classes]
-└── thumb.png           [Project thumbnail]
+├── design.pdf        [Contains project design flowchart]
+├── env.yml           [Contains a list of project dependencies]
+├── ERD.png           [Contains the database schema]
+├── index.yml         [Contains project details]
+├── INSTRUCTIONS.md   [Contains instructions for BMES 550 project]
+├── LICENSE.md        [Project license]
+├── README.md         [Contains project description and usage instructions]
+├── report.pdf        [Contains project report]
+├── sketch.jpg        [Contains project sketch]
+├── src               [Contains project source code]  
+│   ├── curation.py   [Script for building the project database]
+│   ├── dge.py        [Module for differentially expressed gene analysis]
+│   ├── gui.py        [Script for running the GUI]
+│   └── utils.py      [Module with custom functions and classes]
+└── thumb.png         [Project thumbnail]
 ```
 
-## API-Keys
+## Potential Improvements and Further Development
 
-## Usage
-
-This project depends on the `wxPython` package which requires additional
-installation steps for Linux machines. See the
-[wxPython documentation](https://wxpython.org/pages/downloads/) for more details.
-The instructions below will work on Windows and MacOS.
-
-```bash
-# Set up conda environment
-conda env create -f env.yml
-conda activate cabid
-
-# Run the app
-```
-
-## File path assumptions
+- Add more datasets to the database.
+- Allow users to upload their own series matrix files for analysis.
+- Utilize the `limma` package in R to perform differential expression analysis
+  to generate more accurate results.

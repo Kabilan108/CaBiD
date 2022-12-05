@@ -1,9 +1,34 @@
 """
-Data Curation Tools
+CaBiD Data Curation
+-------------------
 
-By Tony Kabilan Okeke <tko35@drexel.edu>
+This module contains functions for curation of data from GEO and CuMiDa.
 
-This module contains functions for data curation.
+Author: Tony Kabilan Okeke <tko35@drexel.edu>
+
+Functions & Classes
+-------------------
+geodlparse(acc, datadir='', silent=False, make_dir=False, cache=False)
+    Download, parse and cache data from GEO.
+    This fuction only downloads GSE and GPL data.
+CuMiDa()
+    Class for downloading gene expression matrices from GEO, parsing them and
+    combining them with Ensembl gene IDs from the corresponding GPL.
+curate
+    Download the datasets from CuMiDa and build the CaBiD database.
+datacheck()
+    Check if the CaBiD database exists and create it if it doesn't.
+
+__main__
+---------
+This module can be run as a script to download, parse and cache data from GEO.
+This script will download 21 cancer gene expression datasets from CuMiDa,
+each of which was run on the Affymetrix Human Genome U133 Plus 2.0 Array
+(GPL570). The selected datasets each include 2 classes - a 'normal' group and
+a 'cancer' group. The script will store the gene expression data for each
+patient in a SQLite database (CaBiD.db).
+To locate the downloaded data, run the following command in a terminal:
+    python -c "import utils; print(utils.datadir())"
 """
 
 # Import necessary modules
@@ -14,20 +39,11 @@ from pathlib import Path
 from typing import Union
 from rich import print
 
+import json, os, pickle, re, warnings
 import pandas as pd
 import numpy as np
-import warnings
-import json
-import os
-import re
 
-# Try to import cPickle
-try:
-    import _pickle as pickle
-except ImportError:
-    import pickle
-
-# Import custom modules
+# Import utilities
 import utils
 
 
@@ -337,131 +353,10 @@ class CuMiDa:
     def __str__(self) -> str:
         """String representation of the CuMiDa class"""
 
-        return f"CuMiDa(datadir={self.datadir})"
+        return self.__repr__()
 
 
-class CaBiD_db(utils.SQLite):
-    """
-    This class provides access to the CaBiD database and provides special
-    methods for querying the database.
-
-    Methods
-    -------
-    retrieve_dataset
-    """
-
-    def __init__(self, *args, **kwargs):
-        """Initialize the CaBiD_DB class"""
-
-        super().__init__(*args, **kwargs)
-
-    
-    def retrieve_dataset(self, query: str) -> pd.DataFrame:
-        """
-        This method will retrieve a gene expression dataset from the CaBiD
-        database. It will then convert the gene expresssion data (stored in
-        binary format as pickle objects) into a pandas DataFrame with the 
-        sample type (cancer or normal) as the index and the gene IDs as the
-        columns.
-
-        Parameters
-        ----------
-        query : str
-            The SQL `SELECT` query to retrieve the dataset.
-
-        Returns
-        -------
-        dataset : pd.DataFrame
-        """
-
-        assert isinstance(query, str), 'query must be a string'
-        assert query.startswith('SELECT'), 'query must be a SELECT statement'
-        assert '"SELECT * FROM expression WHERE DATASET_ID = 1"'
-
-        # Query the database
-        df = self.select(query)
-
-        # Convert the binary data into a pandas DataFrame
-        try:
-            dataset = (df['EXPRESSION']
-                .apply(lambda x: pickle.loads(x))
-                .set_index(df['SAMPLE_TYPE']))
-        except KeyError:
-            raise KeyError('Dataset not found in CaBiD database')
-        except:
-            raise Exception('Error converting binary data to DataFrame')
-
-        return dataset
-
-    def check_table(self, table: str) -> bool:
-        """
-        Check if a table exists in the database.
-
-        Parameters
-        ----------
-        table : str
-            The name of the table to check for.
-
-        Returns
-        -------
-        exists : bool
-            True if the table exists, False otherwise.
-        """
-
-        # Check if the table exists and is not empty
-        try:
-            self.select(f"""
-            SELECT tbl_name FROM sqlite_master 
-            WHERE 
-                type='table' AND 
-                tbl_name='{table}'
-            """)
-
-            self.select(f"""
-            SELECT * FROM {table}
-            """)
-        except:
-            return False
-
-        return True
-
-
-def check_db() -> bool:
-    """
-    Check if the CaBiD database exists and if it contains the required tables.
-
-    Returns
-    -------
-    bool
-    """
-
-    # Define path to CaBiD database
-    dbpath = utils.datadir() / 'CaBiD.db'
-    
-    # Check if the database exists
-    flag = dbpath.exists()
-
-    # Check if the database contains the required tables
-    if flag:
-        with CaBiD_db(dbpath) as db:
-            flag = db.check_table('GSE') and db.check_table('GPL')
-
-    return flag
-
-
-def main():
-    """
-    Curate Gene Expression data from CuMiDa and generate a SQLite database.
-
-    This function will download 21 cancer gene expression datasets from CuMiDa
-    each of which was run on the Affymetrix Human Genome U133 Plus 2.0 Array
-    (GPL570). The selected datasets each include 2 classes - a 'normal' group
-    and a 'cancer' group. The GPL570 array contains 54,676 probes. See the
-    README for more details.
-
-    The datasets will be stored in a SQLite database in the project directory.
-    """
-
+def curate() -> None:
     # Initialize CuMiDa
     cumida = CuMiDa()
 
@@ -474,7 +369,7 @@ def main():
 
     # Initialize database connection
     dbpath = utils.datadir() / 'CaBiD.db'
-    db = utils.SQLite(dbpath)
+    db = utils.CaBiD_db(dbpath)
 
     # Drop any existing tables
     db.drop_table('datasets')
@@ -520,6 +415,22 @@ def main():
 
             pbar.update(1)
 
+    # Close the database connection
+    db.close()
+
+
+def datacheck() -> None:
+    """
+    Check if the CaBiD database exists and create it if it doesn't.
+    """
+    dbpath = utils.datadir() / 'CaBiD.db'
+    if not dbpath.exists():
+        curate();
+    else:
+        with utils.CaBiD_db(dbpath) as db:
+            if not (db.check_table('expression') and db.check_table('datasets')):
+                curate();
+
 
 if __name__ == '__main__':
-    main();
+    curate();

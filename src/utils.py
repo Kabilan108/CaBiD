@@ -1,28 +1,42 @@
 """
-Utilities
+CaBiD Utilities
+---------------
 
-By Tony Kabilan Okeke <tko35@drexel.edu>
+This module contains utility functions for CaBiD.
 
-This module contains utility functions.
+Author: Tony Kabilan Okeke <tko35@drexel.edu>
+
+Functions & Classes
+-------------------
+config
+    Configuration class with paths to data and cache directories
+ispc
+    Check if the system is a PC
+cachedir
+    Get the cache directory
+tempdir
+    Get a temporary directory
+slugify
+    Convert a URL to a clean filename (Based on Django's slugify)
+isnonemptyfile
+    Check if a file exists and is not empty
+datadir
+    Return the path to project data directory
+downloadurl
+    Download a URL to a file
+CaBiD_db
+    Class for connecting to and querying the CaBiD database
 """
 
 # Imports
-import os
-import platform
-import re
-import shutil
-import sqlite3
-import tempfile
-import unicodedata
-import _pickle as pickle
-from itertools import islice
-from pathlib import Path
 from typing import Any, Tuple
-
-import requests
 from pandas import DataFrame
-from rich import print
 from tqdm.auto import tqdm
+from pathlib import Path
+from rich import print
+
+import os, pickle, platform, re, requests, shutil, sqlite3, tempfile, \
+    unicodedata
 
 
 class config:
@@ -47,6 +61,7 @@ class config:
 def ispc() -> bool:
     """
     Check if the system is a PC
+    Based on bmes.ispc() by Ahmet Sacan
     """
 
     if not hasattr(ispc, 'value'):
@@ -145,6 +160,7 @@ def isnonemptyfile(file: str) -> bool:
 def datadir() -> Path:
     """
     Return the path to a data directory
+    Based on bmes.datadir() by Ahmet Sacan
     """
 
     # Check if data directory is set
@@ -258,36 +274,10 @@ def downloadurl(url: str, file: str='', overwrite: bool=False,
     return file
 
 
-def iohead(file: str |Path, n: int=5) -> None:
+class CaBiD_db:
     """
-    Print the first n lines of a file to the console
-
-    Parameters
-    ----------
-    file : str or Path
-        Path to file
-    n : int, optional
-        Number of lines to print, by default 10
-    """
-
-    # Check inputs
-    if isinstance(file, str):  file = Path(file)
-    assert isinstance(file, Path), 'file must be a valid path'
-    assert file.exists(), 'file does not exist'
-    assert isinstance(n, int) and n > 0, 'n must be a positive integer'
-
-    # Open file
-    with open(file, 'r') as f:
-        for line in islice(f, n):
-            if len(line) > 80:
-                print(line[:80] + '...')
-            else:
-                print(line.rstrip())
-
-
-class SQLite:
-    """
-    Wrapper class for accessing SQLite databases
+    This class provides access to the CaBiD database and provides special
+    methods for querying the database.
 
     Methods
     -------
@@ -295,11 +285,19 @@ class SQLite:
         Execute a query
     select(query: str, params: tuple=())
         Execute a select query
+    retrieve_dataset(dataset: tuple)
+        Retrieve a dataset from the database
+    check_table(table: str)
+        Check if a table exists in the database
+    drop_table(table: str)
+        Drop a table from the database
+    binarize(obj: Any)
+        Convert an object to a binary string (pickle)
     close()
         Close the database connection
     """
 
-    def __init__(self, file: Path | str):
+    def __init__(self, file: Path | str) -> None:
         """
         Initialize the SQLite class and connect to the database
 
@@ -379,6 +377,76 @@ class SQLite:
             df.columns = [x[0] for x in cursor.description]  # type: ignore
             return df
 
+
+    def retrieve_dataset(self, dataset: tuple) -> DataFrame:
+        """
+        This method will retrieve a gene expression dataset from the CaBiD
+        database. It will then convert the gene expresssion data (stored in
+        binary format as pickle objects) into a pandas DataFrame with the 
+        sample type (cancer or normal) as the index and the gene IDs as the
+        columns.
+
+        Parameters
+        ----------
+        dataset : tuple
+            Tuple of the form (gse, cancer_type)
+
+        Returns
+        ------
+        dataset : pd.DataFrame
+        """
+
+        # Check inputs
+        assert isinstance(dataset, tuple), 'dataset must be a tuple'
+        assert len(dataset) == 2, 'dataset must be a tuple of length 2'
+        assert dataset[0].startswith('GSE'), 'dataset[0] must be a GSE ID'
+
+        # Query the database
+        data = self.select((
+            "SELECT E.* FROM `expression` AS E, `datasets` AS D "
+            "WHERE D.GSE = '%s' AND D.CANCER = '%s' AND E.DATASET_ID = D.ID"
+        ) % dataset)
+
+        # Convert the binary data to a DataFrame
+        try:
+            data = (data['EXPRESSION']
+                .apply(lambda x: pickle.loads(x))
+                .set_index(data['SAMPLE_TYPE']))
+        except KeyError:
+            raise Exception('Dataset not found in CaBiD database')
+        except Exception as e:
+            raise Exception('Error converting data to DataFrame: ' + str(e))
+
+        return data
+
+
+    def check_table(self, table: str) -> bool:
+        """
+        Check if a table exists in the database.
+
+        Parameters
+        ----------
+        table : str
+            The name of the table to check for.
+
+        Returns
+        -------
+        exists : bool
+            True if the table exists, False otherwise.
+        """
+
+        # Check if the table exists and is not empty
+        try:
+            self.select((
+                "SELECT tbl_name FROM sqlite_master "
+                f"WHERE type='table' AND tbl_name='{table}'"
+            ))
+            self.select(f"SELECT * FROM {table} LIMIT 1")
+        except:
+            return False
+
+        return True
+
     
     def drop_table(self, table: str) -> None:
         """
@@ -415,6 +483,7 @@ class SQLite:
 
 
     def close(self) -> None:
+        """Close the database connection"""
         print(f"Closing connection to {self.file}")
         self.conn.close()
 
@@ -438,6 +507,3 @@ class SQLite:
     def __str__(self) -> str:
         """Return a string representation of the object"""
         return f"SQLite({self.file.name})"
-
-
-#! Need to implement a check for the existence of the database file
