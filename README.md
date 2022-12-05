@@ -15,7 +15,8 @@ of the user-selected dataset. The software will identify key differences in gene
 types. The GUI will include heatmaps and volcano plots to visualize the
 differences in gene expression, along with a table of the significantly
 differentially expressed genes. To find out more about the project, please
-take a look at the [project report](report.pdf).
+take a look at the [project report](report.pdf). You can also take a look at
+the [project design document](design.pdf).
 
 ## Usage
 
