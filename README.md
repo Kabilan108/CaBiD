@@ -9,20 +9,13 @@
 The goal of this project is to develop a web application to investigate
 variations in gene expression across various cancer types. Datasets selected
 from GEO (Gene Expression Omnibus) and CuMiDa (Curated Microarray Database)
-will be preprocessed and curated in a SQLite database. The Dash library (python)
-will then be used to develop a web application that will generate interactive
-visualizations of the curated dataset. The software will identify key
-differences in gene expression between healthy controls and patients with
-various types of cancer. The web application will include interactive heatmaps
-to illustrate the expression of various genes in the selected cancer type.
-
-## Project Sketch
-
-![Project Sketch](Project Sketch.jpg)
-
-## Database Schema
-
-![Database Schema](ERD.png)
+will be preprocessed and curated in a SQLite database. The wxPython package
+will then be used to develop a GUI application that will generate visualizations
+of the user-selected dataset. The software will identify key differences in gene expression between healthy controls and tumoral samples across various cancer
+types. The GUI will include heatmaps and volcano plots to visualize the
+differences in gene expression, along with a table of the significantly
+differentially expressed genes. To find out more about the project, please
+take a look at the [project report](report.pdf).
 
 ## Usage
 
@@ -45,40 +38,27 @@ conda activate cabid
 
 # Download necessary data and build the project database
 python src/curation.py
+
+# Run the GUI
+python src/gui.py
 ```
 
-## The Dataset
+## Project Sketch
 
-21 cancer gene expression datasets were selected from the Curated Microarray
-Database, [CuMiDa](https://sbcb.inf.ufrgs.br/cumida). Each dataset was
-generated on the Affymetrix Human Genome U133 Plus 2.0 Array (GPL570). The
-selected datasets each include 2 classes - a 'normal' group and a 'cancer'
-group. The GPL570 array contains 54,676 probes. The table below shows the GSE
-accession numbers, cancer types, and sample sizes for each dataset.
+<p align="center">
+  <img src="sketch.jpg" alt="Project Sketch" width="650" align="center"/>
+</p>
 
-| Cancer Type |   Samples | GEO Accession |
-|:-----------:|:---------:|:-------------:|
-| Bladder     |        85 | GSE31189      |
-| Breast      |       116 | GSE42568      |
-| Breast      |        12 | GSE26910      |
-| Colorectal  |        63 | GSE8671       |
-| Colorectal  |        33 | GSE32323      |
-| Colorectal  |        18 | GSE41328      |
-| Gastric     |        24 | GSE19826      |
-| Gastric     |        20 | GSE79973      |
-| Leukemia    |        46 | GSE71935      |
-| Liver       |        91 | GSE62232      |
-| Lung        |       114 | GSE19804      |
-| Lung        |        90 | GSE18842      |
-| Lung        |        48 | GSE27262      |
-| Pancreatic  |        51 | GSE16515      |
-| Prostate    |        49 | GSE46602      |
-| Prostate    |        17 | GSE55945      |
-| Prostate    |        12 | GSE26910      |
-| Renal       |       143 | GSE53757      |
-| Renal       |        28 | GSE66270      |
-| Throat      |       103 | GSE42743      |
-| Throat      |        40 | GSE12452      |
+## Database Schema
+
+Below is the database schema for the SQLite database that will be used to
+store the curated datasets. The database will contain two tables: `datasets`,
+which will store the metadata for each dataset, and `expression`, which will
+store the gene expression data for sample (patient).
+
+<p align="center">
+  <img src="ERD.png" alt="Database Schema" width="300" align="center"/>
+</p>
 
 ## Folder Structure
 
