@@ -1,3 +1,15 @@
 title: GUI Project
 author: Tony Kabilan Okeke, Ali Youssef, Cooper Molloy
-abstract: Something something blah blah blah
+abstract: Identifying genes with higher expression in tumor or metastatic
+  tissues can help in better understanding tumor formation and can serve as 
+  biomarkers of progression or as potential therapy targets. In this project,
+  the main goal is to discover potential cancer biomarkers by assessing genomic
+  data from cancer patients with different cancer types by performing
+  differential gene expression. A graphical user interface (GUI) is created in
+  this project as a tool to highlight the difference between normal and tumoral
+  patients for a given cancer type and preprocessed GSE dataset selected
+  ondemand by the user. The GUI is created in Python and data utilized in this
+  project is from gene expression omnibus (GEO) and CuMiDa. The key features of
+  this tool revolve around performing differential gene expression analysis
+  between normal and tumoral samples for specific cancer types and visualizing
+  results in volcano plots and heatmaps.
