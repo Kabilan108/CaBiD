@@ -26,6 +26,7 @@ expression analysis on the dataset.
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib import gridspec
+from pathlib import Path
 import wx
 
 # Import CaBiD modules
@@ -117,9 +118,6 @@ class ControlBox(wx.StaticBox):
                 self.input[label].field.Bind(
                     wx.EVT_CHAR, self.GetParent().acceptInput
                 )
-                # self.input[label].field.Bind(
-                #     wx.EVT_TEXT_ENTER, self.GetParent().onSelect
-                # )
             else:
                 raise ValueError("Invalid input type")
         self.SetMinSize((200, -1))
@@ -135,11 +133,15 @@ class GUIPanel(wx.Panel):
         Populate GSE selector with GSEs for selected cancer type
     onAnalyze
         Perform differential gene expression analysis on selected dataset
+    acceptInput
+        Acceptable inputs for analysis thresholds
     
     Methods
     -------
     create_figure
         Create a figure canvas
+    populate_dge_table
+        Populate the DGE table with results
     """
 
     def __init__(self, parent):
@@ -304,7 +306,25 @@ class GUIPanel(wx.Panel):
         Acceptable inputs for analysis thresholds
         """
 
-        event.Skip()
+        key = event.GetKeyCode()
+
+        # Allow ASCII numerals
+        if ord('0') <= key <= ord('9'):
+            event.Skip()
+            return
+
+        # Allow decimal point
+        if key == ord('.'):
+            event.Skip()
+            return
+
+        # Allow backspace, arrow keys, home, end, delete
+        if key in [wx.WXK_BACK, wx.WXK_LEFT, wx.WXK_RIGHT, wx.WXK_HOME,
+                   wx.WXK_END, wx.WXK_DELETE]:
+            event.Skip()
+            return
+
+        return
 
 
     def onAnalyze(self, event):
@@ -340,7 +360,7 @@ class GUIPanel(wx.Panel):
         self.populate_dge_table()
 
         # Volcano Plot
-        plot_volcano(self.volcano['axis'], self.dge)
+        plot_volcano(self.volcano['axis'], self.dge, self.fc_thr, self.p_thr)
         self.volcano['canvas'].draw()  # type: ignore
 
         # Heatmap
@@ -366,6 +386,10 @@ class GUIPanel(wx.Panel):
         dge = (self.dge[self.dge['adj pval'] < self.p_thr]
             .sort_values(['fc', 'adj pval'], ascending=[False, True])
             .round(3))
+
+        # If no DGEs, display message
+        if dge.shape[0] == 0:
+            wx.MessageBox('No DGEs found', 'No DGEs')
 
         # Add rows
         for i in range(len(dge)):
@@ -456,8 +480,41 @@ class CaBiD_GUI(wx.Frame):
 
     
     def onSave(self, event):
-        """Handle save menu item click"""
-        print("Save menu item clicked")
+        """Save analysis results to a folder"""
+        
+        # Check if analysis has been run
+        if not hasattr(self.panel, 'dge'):
+            wx.MessageBox('No results to save', 'Error')
+            return
+        
+        # Prompt user to select a folder to save results to
+        dlg = wx.DirDialog(self, "Choose a directory:", 
+                           style=wx.DD_DEFAULT_STYLE)
+        
+        if dlg.ShowModal() == wx.ID_OK:
+            path = Path(dlg.GetPath())
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return
+
+        # Define filename prefixes
+        cancer_type = self.panel.dataset_box.input['cancer_type'].GetValue()
+        gse = self.panel.dataset_box.input['gse'].GetValue()
+        dataset = cancer_type + '_' + gse
+
+        # Save results
+        self.SetStatusText("Saving results to %s..." % path)
+        (self.panel.dge
+            .to_csv(path / f"{dataset}_DGE.csv", index=False))  # type: ignore
+        (self.panel.volcano['fig']
+            .savefig(path / f"{dataset}_volcano.png"))  # type: ignore
+        (self.panel.heatmap['fig']
+            .savefig(path / f"{dataset}_heatmap.png"))  # type: ignore
+        self.SetStatusText("Ready")
+
+        # Show dialog
+        wx.MessageBox('Results saved', 'Success')
 
 
     def onLoad(self, event):
