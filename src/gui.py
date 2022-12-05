@@ -370,8 +370,6 @@ class GUIPanel(wx.Panel):
         # Reset wait state
         self.parent.SetStatusText("Ready")
         self.analyze.Enable()
-        
-        print('Analyzed!')
 
 
     def populate_dge_table(self):
