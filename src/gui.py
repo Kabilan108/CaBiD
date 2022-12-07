@@ -283,7 +283,7 @@ class GUIPanel(wx.Panel):
         """
         Populate GSE selector with GSEs for selected cancer type
         """
-        
+
         # Get the triggering control
         obj = event.GetEventObject()
 
@@ -382,8 +382,9 @@ class GUIPanel(wx.Panel):
 
         # Keep only significant genes
         dge = (self.dge[self.dge['adj pval'] < self.p_thr]
-            .sort_values(['fc', 'adj pval'], ascending=[False, True])
-            .round(3))
+            .sort_values(['fc', 'adj pval'], ascending=[False, True]))
+        dge['fc'] = dge['fc'].apply(lambda x: f"{x:.2f}")
+        dge['adj pval'] = dge['adj pval'].apply(lambda x: f"{x:.2e}")
 
         # If no DGEs, display message
         if dge.shape[0] == 0:
@@ -391,12 +392,12 @@ class GUIPanel(wx.Panel):
 
         # Add rows
         for i in range(len(dge)):
-            fc = round(dge.iloc[i]['fc'], 2)
-            p = round(dge.iloc[i]['adj pval'], 4)
+            fc = dge.iloc[i]['fc']
+            p = dge.iloc[i]['adj pval']
 
             self.dge_table.InsertItem(i, dge.iloc[i]['gene'])
-            self.dge_table.SetItem(i, 1, str(fc))
-            self.dge_table.SetItem(i, 2, str(p))
+            self.dge_table.SetItem(i, 1, fc)
+            self.dge_table.SetItem(i, 2, p)
 
 
 class CaBiD_GUI(wx.Frame):
