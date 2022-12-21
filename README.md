@@ -1,7 +1,7 @@
 # Cancer Biomarker Discovery (CaBiD) Project
 
 ![license](https://img.shields.io/github/license/Kabilan108/CaBiD?style=flat-square)
-[![made-with-python]https://img.shields.io/badge/Made%20With-Python-blue?style=flat-square](https://www.python.org)
+[![made-with-python](https://img.shields.io/badge/Made%20With-Python-blue?style=flat-square)](https://www.python.org)
 
 **Authors:** [Tony Kabilan Okeke](mailto:tonykabilanokeke@gmail.com),
              [Ali Youssef](mailto:amy57@drexel.edu),
