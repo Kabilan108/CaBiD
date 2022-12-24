@@ -35,7 +35,15 @@ from tqdm.auto import tqdm
 from pathlib import Path
 from rich import print
 
-import os, pickle, platform, re, requests, shutil, sqlite3, tempfile, \
+import os
+import pickle
+import platform
+import re
+import requests
+import shutil
+import sqlite3
+import tempfile
+import \
     unicodedata
 
 
@@ -120,7 +128,7 @@ def tempdir() -> Path:
     return path
 
 
-def slugify(value: str, allow_unicode: bool=False) -> str:
+def slugify(value: str, allow_unicode: bool = False) -> str:
     """
     Taken from https://github.com/django/django/blob/master/django/utils/text.py
     Convert to ASCII if 'allow_unicode' is False. Convert spaces or
@@ -138,9 +146,9 @@ def slugify(value: str, allow_unicode: bool=False) -> str:
         value = unicodedata.normalize('NFKC', value)
     else:
         value = (unicodedata.normalize('NFKD', value)
-            .encode('ascii', 'ignore')
-            .decode('ascii'))
-    
+                 .encode('ascii', 'ignore')
+                 .decode('ascii'))
+
     value = re.sub(r'[^\w.\s-]', '', value).strip().lower()
 
     return re.sub(r'[-\s]+', '-', value)
@@ -180,7 +188,7 @@ def datadir() -> Path:
             path = Path(os.environ['USERPROFILE']) / 'CaBiD'
         else:
             path = Path(os.environ['HOME']) / '.cabid'
-        
+
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -189,8 +197,8 @@ def datadir() -> Path:
     return path
 
 
-def downloadurl(url: str, file: str='', overwrite: bool=False,
-                progress: bool=True) -> str:
+def downloadurl(url: str, file: str = '', overwrite: bool = False,
+                progress: bool = True) -> str:
     """
     Download and save file from a given URL
     Modified from bmes.downloadurl by Ahmet Sacan
@@ -223,7 +231,8 @@ def downloadurl(url: str, file: str='', overwrite: bool=False,
         if not file:
             return url
         if not overwrite:
-            if isnonemptyfile(file):  return file
+            if isnonemptyfile(file):
+                return file
             shutil.copyfile(url, file)
             return file
 
@@ -237,21 +246,22 @@ def downloadurl(url: str, file: str='', overwrite: bool=False,
         file = Path(file).resolve()  # type: ignore
 
     # Return file if it exists and overwrite is False
-    if isnonemptyfile(file) and not overwrite:  return file
+    if isnonemptyfile(file) and not overwrite:
+        return file
 
     # Download the file
     r = requests.get(url, stream=True, allow_redirects=True,
                      timeout=(3, 27))
     if r.status_code == 200:
         size = int(r.headers.get('content-length', 0))
-        
+
         # Create a progress bar
         if progress:
             with open(file, 'wb') as f:
                 with tqdm(
-                    total=size, 
-                    unit='B', 
-                    unit_scale=True, 
+                    total=size,
+                    unit='B',
+                    unit_scale=True,
                     desc=file.name,  # type: ignore
                     initial=0
                 ) as pbar:
@@ -308,14 +318,14 @@ class CaBiD_db:
         """
 
         # Check inputs
-        if isinstance(file, str):  file = Path(file)
-        
+        if isinstance(file, str):
+            file = Path(file)
+
         self.file = file
         self.conn = sqlite3.connect(file)
         self.conn.row_factory = sqlite3.Row  # Fetchall returns dict
 
-
-    def execute(self, query: str, params: Tuple[Any, ...]=()) -> None:
+    def execute(self, query: str, params: Tuple[Any, ...] = ()) -> None:
         """
         Execute a query
 
@@ -340,8 +350,7 @@ class CaBiD_db:
             except sqlite3.Error as e:
                 print(e)
 
-
-    def select(self, query: str, params: Tuple[Any, ...]=()) -> DataFrame:
+    def select(self, query: str, params: Tuple[Any, ...] = ()) -> DataFrame:
         """
         Execute a select query and return the results as a DataFrame
 
@@ -377,7 +386,6 @@ class CaBiD_db:
             df.columns = [x[0] for x in cursor.description]  # type: ignore
             return df
 
-
     def retrieve_dataset(self, dataset: tuple) -> DataFrame:
         """
         This method will retrieve a gene expression dataset from the CaBiD
@@ -410,15 +418,14 @@ class CaBiD_db:
         # Convert the binary data to a DataFrame
         try:
             data = (data['EXPRESSION']
-                .apply(lambda x: pickle.loads(x))
-                .set_index(data['SAMPLE_TYPE']))
+                    .apply(lambda x: pickle.loads(x))
+                    .set_index(data['SAMPLE_TYPE']))
         except KeyError:
             raise Exception('Dataset not found in CaBiD database')
         except Exception as e:
             raise Exception('Error converting data to DataFrame: ' + str(e))
 
         return data
-
 
     def check_table(self, table: str) -> bool:
         """
@@ -447,7 +454,6 @@ class CaBiD_db:
 
         return True
 
-    
     def drop_table(self, table: str) -> None:
         """
         Drop a table from the database
@@ -461,8 +467,7 @@ class CaBiD_db:
         # Check inputs
         assert isinstance(table, str), 'table must be a string'
 
-        self.execute(f'DROP TABLE IF EXISTS {table}');
-
+        self.execute(f'DROP TABLE IF EXISTS {table}')
 
     def binarize(self, obj: Any) -> sqlite3.Binary:
         """
@@ -472,7 +477,7 @@ class CaBiD_db:
         ----------
         obj : Any
             Object to convert
-        
+
         Returns
         -------
         sqlite3.Binary
@@ -481,28 +486,23 @@ class CaBiD_db:
 
         return sqlite3.Binary(pickle.dumps(obj, protocol=5))
 
-
     def close(self) -> None:
         """Close the database connection"""
         print(f"Closing connection to {self.file}")
         self.conn.close()
 
-
     def __enter__(self):
         """Enter the runtime context related to this object"""
         return self
-
 
     def __exit__(self, type, value, traceback):
         """Exit the runtime context related to this object"""
         self.conn.commit()
         self.conn.close()
 
-
     def __repr__(self) -> str:
         """Return a string representation of the object"""
         return f"SQLite({self.file.name})"
-
 
     def __str__(self) -> str:
         """Return a string representation of the object"""
