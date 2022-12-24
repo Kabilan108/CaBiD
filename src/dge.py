@@ -43,7 +43,7 @@ def sort_normal(X: pd.Series):
     return pd.Index([sorter('normal', x) for x in X])
 
 
-def dge(gse: pd.DataFrame, fc_thr: float=2.0, p_thr: float=0.05):
+def dge(gse: pd.DataFrame, fc_thr: float = 2.0, p_thr: float = 0.05):
     """
     Perform differential gene expression analysis on a GSE dataset.
     A Welch's t-test is performed for each gene, and the p-values are corrected
@@ -61,8 +61,8 @@ def dge(gse: pd.DataFrame, fc_thr: float=2.0, p_thr: float=0.05):
 
     # Compute fold changes and p-values
     dge = (gse.groupby('SAMPLE_TYPE').mean()
-        .sort_index(key=sort_normal))
-    fc = dge.iloc[0,:] - dge.iloc[1,:]  # Subtract because log transformed
+           .sort_index(key=sort_normal))
+    fc = dge.iloc[0, :] - dge.iloc[1, :]  # Subtract because log transformed
     pvals = stats.ttest_ind(
         gse.filter(regex='normal', axis=0),
         gse.filter(regex='^((?!normal).)*$', axis=0),
@@ -81,12 +81,13 @@ def dge(gse: pd.DataFrame, fc_thr: float=2.0, p_thr: float=0.05):
         'de': (adj_pvals < p_thr) & (abs(fc) > fc_thr)
     }).reset_index()
         .rename(columns={'index': 'gene'}))
-    dge['de'] = dge['de'].replace({True: 'Significant', False: 'Non Significant'})
+    dge['de'] = dge['de'].replace(
+        {True: 'Significant', False: 'Non Significant'})
 
     return dge
 
 
-def plot_volcano(ax, dge, fc_thr: float=2.0, p_thr: float=0.05):
+def plot_volcano(ax, dge, fc_thr: float = 2.0, p_thr: float = 0.05):
     """
     Create a volcano plot
     """
@@ -134,14 +135,15 @@ def plot_heatmap(fig, axes, data):
 
     # Filter out genes by variance (keep the 99th percentile)
     data = data.loc[:, data.var() > data.var().quantile(0.99)]
-    
+
     # Get values
     X = data.values
 
     # Cluster samples and plot dendrogram
     Y = hierarchy.linkage(X)
     with plt.rc_context({'lines.linewidth': 0.8}):
-        Z1 = hierarchy.dendrogram(Y, orientation='left', ax=axes['samp_dendro'])
+        Z1 = hierarchy.dendrogram(
+            Y, orientation='left', ax=axes['samp_dendro'])
     axes['samp_dendro'].set_xticks([])
     axes['samp_dendro'].set_yticks([])
     for x in ['top', 'bottom', 'left', 'right']:
@@ -159,12 +161,13 @@ def plot_heatmap(fig, axes, data):
     xlab = data.index.values[Z1['leaves']]
 
     # Annotation bar
-    ## Create matrix for annotation bar
-    annot = np.matrix([1 if re.search(r'normal', lab) else 0 for lab in xlab]).T
-    ## Create color map
+    # Create matrix for annotation bar
+    annot = np.matrix(
+        [1 if re.search(r'normal', lab) else 0 for lab in xlab]).T
+    # Create color map
     cmap = colors.ListedColormap(['#33c442', '#c43333'])  # type: ignore
     norm = colors.BoundaryNorm([0, 0.5, 1], cmap.N)  # type: ignore
-    ## Plot annotation bar
+    # Plot annotation bar
     axes['anot'].imshow(annot, aspect='auto', cmap=cmap, norm=norm)
 
     # Plot the heatmap
@@ -177,9 +180,10 @@ def plot_heatmap(fig, axes, data):
 
     # Despine axes and remove ticks
     for axis in axes.values():
-        if axis is axes['cbar']: continue
+        if axis is axes['cbar']:
+            continue
         for x in ['top', 'bottom', 'left', 'right']:
-                axis.spines[x].set_visible(False)
+            axis.spines[x].set_visible(False)
         axis.set_xticks([])
         axis.set_yticks([])
 
