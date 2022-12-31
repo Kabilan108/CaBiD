@@ -50,25 +50,25 @@ class ControlBox(wx.StaticBox):
             super().__init__(wx.HORIZONTAL)
 
             # Define font
-            font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, 
+            font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL,
                            wx.FONTWEIGHT_NORMAL)
-            
+
             # Create label
             self.label = wx.StaticText(parent, label=label)
             self.label.SetFont(font)
             self.Add(self.label, 1, wx.RIGHT)
 
             # Create text input
-            self.field = wx.TextCtrl(parent, size=(60,20), style=wx.TE_PROCESS_ENTER)
+            self.field = wx.TextCtrl(parent, size=(
+                60, 20), style=wx.TE_PROCESS_ENTER)
             self.field.name = self.label.GetLabelText()  # type: ignore
             self.field.SetFont(font)
             self.Add(self.field, 1)
 
-
     def __init__(self, parent, label, inputs, **inputargs):
 
         assert isinstance(inputs, dict), 'inputs must be a dictionary'
-        
+
         # Initialize the wx.StaticBox class
         super().__init__(parent, -1, label=label, style=wx.ALIGN_CENTER)
 
@@ -88,16 +88,16 @@ class ControlBox(wx.StaticBox):
                 # Add label
                 label_text = label.replace('_', ' ').capitalize()
                 self.sizer.Add(
-                    wx.StaticText(self, -1, label=label_text), 0, 
+                    wx.StaticText(self, -1, label=label_text), 0,
                     wx.ALIGN_LEFT | wx.LEFT, 15
                 )
 
                 # Create a selector
                 self.input[label] = wx.ComboBox(self, -1, inputargs['value'][label],
-                    choices=inputargs['choices'][label])
+                                                choices=inputargs['choices'][label])
                 self.input[label].name = label
                 self.sizer.Add(
-                    self.input[label], 0, 
+                    self.input[label], 0,
                     wx.EXPAND | wx.BOTTOM | wx.LEFT | wx.RIGHT, 15
                 )
 
@@ -135,7 +135,7 @@ class GUIPanel(wx.Panel):
         Perform differential gene expression analysis on selected dataset
     acceptInput
         Acceptable inputs for analysis thresholds
-    
+
     Methods
     -------
     create_figure
@@ -155,8 +155,8 @@ class GUIPanel(wx.Panel):
         # Get choices for selectors
         self.select_choices = {
             'cancer_type': (self.db
-                .select("SELECT DISTINCT CANCER FROM `datasets`")['CANCER']
-                .tolist()),
+                            .select("SELECT DISTINCT CANCER FROM `datasets`")['CANCER']
+                            .tolist()),
             'gse': []
         }
 
@@ -205,12 +205,12 @@ class GUIPanel(wx.Panel):
             style=wx.LC_REPORT | wx.BORDER_SUNKEN
         )
         for i, col in enumerate(['Gene', 'Fold Change', 'Adj p-value']):
-            self.dge_table.InsertColumn(i, col, width=100, 
-                format=wx.LIST_FORMAT_CENTER)
+            self.dge_table.InsertColumn(i, col, width=100,
+                                        format=wx.LIST_FORMAT_CENTER)
         results_top.Add(self.dge_table, 0, wx.ALL, 15)
 
         # Volcano Plot
-        self.volcano = self.create_figure((500,300), 'volcano', {
+        self.volcano = self.create_figure((500, 300), 'volcano', {
             'title': 'Normal - Cancer', 'x': 'Fold Change',
             'y': '-log10(p-value)'
         })
@@ -219,7 +219,7 @@ class GUIPanel(wx.Panel):
         )
 
         # Heatmap
-        self.heatmap = self.create_figure((830,300), 'heatmap', {
+        self.heatmap = self.create_figure((830, 300), 'heatmap', {
             'title': 'Heatmap', 'x': 'Samples', 'y': 'Genes'
         })
         self.heatmap['fig'].subplots_adjust(  # type: ignore
@@ -236,7 +236,6 @@ class GUIPanel(wx.Panel):
 
         # Set sizer
         self.SetSizer(sizer)
-
 
     def create_figure(self, size, figtype, labs):
         """
@@ -278,7 +277,6 @@ class GUIPanel(wx.Panel):
 
         return dict(fig=fig, axis=axis, canvas=canvas)
 
-
     def onSelect(self, event):
         """
         Populate GSE selector with GSEs for selected cancer type
@@ -299,7 +297,6 @@ class GUIPanel(wx.Panel):
             self.dataset_box.input['gse'].SetValue(gse['GSE'].tolist()[0])
         else:
             event.Skip()
-
 
     def acceptInput(self, event):
         """
@@ -326,7 +323,6 @@ class GUIPanel(wx.Panel):
 
         return
 
-
     def onAnalyze(self, event):
         """
         Handle button click
@@ -336,8 +332,10 @@ class GUIPanel(wx.Panel):
         cancer_type = self.dataset_box.input['cancer_type'].GetValue()
         gse = self.dataset_box.input['gse'].GetValue()
         dataset = (gse, cancer_type)
-        self.p_thr = float(self.threshold_box.input['p__value'].field.GetValue())
-        self.fc_thr = float(self.threshold_box.input['fold_change'].field.GetValue())
+        self.p_thr = float(
+            self.threshold_box.input['p__value'].field.GetValue())
+        self.fc_thr = float(
+            self.threshold_box.input['fold_change'].field.GetValue())
 
         # Set wait state
         self.parent.SetStatusText("Analyzing %s..." % gse)
@@ -371,7 +369,6 @@ class GUIPanel(wx.Panel):
         self.parent.SetStatusText("Ready")
         self.analyze.Enable()
 
-
     def populate_dge_table(self):
         """
         Populate the DGE table in the GUI
@@ -382,7 +379,7 @@ class GUIPanel(wx.Panel):
 
         # Keep only significant genes
         dge = (self.dge[self.dge['adj pval'] < self.p_thr]
-            .sort_values(['fc', 'adj pval'], ascending=[False, True]))
+               .sort_values(['fc', 'adj pval'], ascending=[False, True]))
         dge['fc'] = dge['fc'].apply(lambda x: f"{x:.2f}")
         dge['adj pval'] = dge['adj pval'].apply(lambda x: f"{x:.2e}")
 
@@ -430,9 +427,9 @@ class CaBiD_GUI(wx.Frame):
             style=wx.CLOSE_BOX | wx.CAPTION,
             *args, **kwargs
         )
-        
+
         # Check if database exists
-        datacheck();
+        datacheck()
 
         # Connect to database
         dbpath = datadir() / 'CaBiD.db'
@@ -446,7 +443,6 @@ class CaBiD_GUI(wx.Frame):
 
         # Bind event for closing the window
         self.Bind(wx.EVT_CLOSE, self.onExit)
-
 
     def create_menu(self):
         """
@@ -477,19 +473,18 @@ class CaBiD_GUI(wx.Frame):
         menu_bar.Append(help_menu, '&Help')
         self.SetMenuBar(menu_bar)
 
-    
     def onSave(self, event):
         """Save analysis results to a folder"""
-        
+
         # Check if analysis has been run
         if not hasattr(self.panel, 'dge'):
             wx.MessageBox('No results to save', 'Error')
             return
-        
+
         # Prompt user to select a folder to save results to
-        dlg = wx.DirDialog(self, "Choose a directory:", 
+        dlg = wx.DirDialog(self, "Choose a directory:",
                            style=wx.DD_DEFAULT_STYLE)
-        
+
         if dlg.ShowModal() == wx.ID_OK:
             path = Path(dlg.GetPath())
             dlg.Destroy()
@@ -515,15 +510,13 @@ class CaBiD_GUI(wx.Frame):
         # Show dialog
         wx.MessageBox('Results saved', 'Success')
 
-
     def onLoad(self, event):
         """Handle load menu item click"""
-        
+
         wx.MessageBox(
             'This feature is not yet implemented.\n',
             'Please see github.com/kabilan108/CaBiD for updates',
         )
-
 
     def onExit(self, event):
         """Close the window"""
@@ -531,7 +524,6 @@ class CaBiD_GUI(wx.Frame):
         self.db.close()
         self.Destroy()
 
-    
     def onAbout(self, event):
         """Display an 'About' dialog"""
 
@@ -553,6 +545,6 @@ class CaBiD_GUI(wx.Frame):
 if __name__ == '__main__':
     # Run the GUI
     app = wx.App()
-    CaBiD_GUI().Show();
-    app.MainLoop();
+    CaBiD_GUI().Show()
+    app.MainLoop()
     del app
